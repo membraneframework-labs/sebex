@@ -1,0 +1,6 @@
+/_build/
+/cover/
+/deps/
+/.fetch
+erl_crash.dump
+sebex_elixir_analyzer

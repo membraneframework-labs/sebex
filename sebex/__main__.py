@@ -16,8 +16,8 @@ load_dotenv()
 
 @click.group()
 @click.version_option(__version__)
-@click.option('--workspace', default='.', required=True, show_default=True, show_envvar=True,
-              type=click.Path(exists=True, file_okay=False, writable=True),
+@click.option('--workspace', type=click.Path(exists=True, file_okay=False, writable=True),
+              default='.', required=True, show_default=True, show_envvar=True,
               help='Path to the workspace directory.')
 @click.option('-p', '--profile', default='all', required=True, show_default=True, show_envvar=True,
               metavar='NAME', help='Name of the workspace profile to operate in.')
@@ -27,6 +27,9 @@ load_dotenv()
               help='Set number of parallel running jobs.')
 @click.option('--github_access_token', required=True, show_envvar=True, metavar='TOKEN',
               help='Github private access token.')
+@click.option('--elixir-analyzer', type=click.Path(exists=True, file_okay=True, dir_okay=False),
+              default='sebex_elixir_analyzer', required=True, show_default=True, show_envvar=True,
+              metavar='PATH', help='Path to the Sebex ElixirAnalyzer executable.')
 def cli(**kwargs):
     Context.initial(**kwargs)
 

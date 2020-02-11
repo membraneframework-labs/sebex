@@ -14,12 +14,15 @@ class Context:
     profile_name: str
     github: Github
     jobs: int
+    elixir_analyzer: str
 
-    def __init__(self, workspace: str, profile: str, github_access_token: str, jobs: int) -> None:
+    def __init__(self, workspace: str, profile: str, github_access_token: str, jobs: int,
+                 elixir_analyzer: str) -> None:
         self.workspace_path = Path(workspace)
         self.profile_name = profile
         self.github = Github(github_access_token)
         self.jobs = jobs
+        self.elixir_analyzer = str(Path(elixir_analyzer).resolve())
 
     @classmethod
     def current(cls) -> 'Context':

@@ -1,17 +1,18 @@
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import NamedTuple, Callable
 
 from semver import VersionInfo
 
-if TYPE_CHECKING:
-    from sebex.config import ProjectHandle
+from sebex.config import ProjectHandle
+from sebex.edit import Span
 
 
 class AnalysisError(Exception):
     pass
 
 
-class Analyzer(ABC):
-    @abstractmethod
-    def package_version(self, project: 'ProjectHandle') -> VersionInfo:
-        pass
+class AnalysisEntry(NamedTuple):
+    version: VersionInfo
+    version_span: Span
+
+
+Analyzer = Callable[[ProjectHandle], AnalysisEntry]
