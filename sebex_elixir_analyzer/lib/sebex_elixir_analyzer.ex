@@ -40,8 +40,9 @@ defmodule Sebex.ElixirAnalyzer do
         t, {:ok, _} = acc ->
           {t, acc}
 
-        {:@, meta, [{:version, _, [{:literal, literal_meta, [token]}]}]} = t, _ ->
-          {t, {:ok, token, Span.from_ast!(meta) |> Span.set(literal_meta)}}
+        {:@, _, [{:version, _, [{:literal, _, [token]} = literal]}]} = t, _
+        when is_binary(token) ->
+          {t, {:ok, token, Span.literal(literal)}}
 
         t, acc ->
           {t, acc}
