@@ -22,6 +22,7 @@ defmodule Sebex.ElixirAnalyzer.MixProject do
 
   defp deps do
     [
+      {:bunch, github: "membraneframework/bunch"},
       {:jason, "~> 1.1"},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
     ]

@@ -36,16 +36,16 @@ defmodule Sebex.ElixirAnalyzer do
   @spec extract_version_attr(ast :: Macro.t()) :: {:ok, String.t(), Span.t()} | nil
   defp extract_version_attr(ast) do
     {_, result} =
-      Macro.prewalk(ast, nil, fn
+      Bunch.Macro.prewalk_while(ast, nil, fn
         t, {:ok, _} = acc ->
-          {t, acc}
+          {:skip, t, acc}
 
         {:@, _, [{:version, _, [{:literal, _, [token]} = literal]}]} = t, _
         when is_binary(token) ->
-          {t, {:ok, token, Span.literal(literal)}}
+          {:skip, t, {:ok, token, Span.literal(literal)}}
 
         t, acc ->
-          {t, acc}
+          {:enter, t, acc}
       end)
 
     result
