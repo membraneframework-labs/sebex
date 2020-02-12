@@ -35,12 +35,6 @@ defmodule Sebex.ElixirAnalyzer.Span do
     new(0, 0, 0, 0)
   end
 
-  #  @spec from_ast!(kv :: Keyword.t()) :: t()
-  #  def from_ast!(kv) when is_list(kv) do
-  #    end_of_expression = Keyword.fetch!(kv, :end_of_expression)
-  #    zero() |> set(kv) |> set(end_of_expression, :end)
-  #  end
-
   @spec set(span :: t(), kv :: Keyword.t()) :: t()
   def set(span, kv), do: set(span, kv, :start)
 
@@ -54,15 +48,22 @@ defmodule Sebex.ElixirAnalyzer.Span do
   end
 
   @spec literal(literal :: {:literal, Keyword.t(), [term]}) :: t()
-  def literal({:literal, meta, [token]}) when is_binary(token) do
-    if String.contains?(token, "\n") do
+  def literal({:literal, meta, [str]}) when is_binary(str) do
+    if String.contains?(str, "\n") do
       raise {:error, "finding spans for multiline strings is not implemented"}
     end
 
     start_line = Keyword.fetch!(meta, :line)
     start_column = Keyword.fetch!(meta, :column)
     delimiter = Keyword.fetch!(meta, :delimiter)
-    end_column = start_column + String.length(token) + 2 * String.length(delimiter)
+    end_column = start_column + String.length(str) + 2 * String.length(delimiter)
+    new(start_line, start_column, start_line, end_column)
+  end
+
+  def literal({:literal, meta, [atom]}) when is_atom(atom) do
+    start_line = Keyword.fetch!(meta, :line)
+    start_column = Keyword.fetch!(meta, :column)
+    end_column = start_column + String.length(Macro.to_string(atom))
     new(start_line, start_column, start_line, end_column)
   end
 end

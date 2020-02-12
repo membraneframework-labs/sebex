@@ -13,11 +13,13 @@ defmodule Sebex.ElixirAnalyzer do
 
     {version, version_span} =
       case extract_version_attr(ast) do
-        {:ok, version, version_span} -> {version, version_span}
         nil -> raise {:error, :version_attr_not_found}
+        x -> x
       end
 
-    %AnalysisReport{version: version, version_span: version_span}
+    dependencies = extract_dependencies(ast)
+
+    %AnalysisReport{version: version, version_span: version_span, dependencies: dependencies}
   end
 
   @spec parse!(source :: String.t()) :: Macro.t() | no_return
@@ -33,21 +35,117 @@ defmodule Sebex.ElixirAnalyzer do
     {:ok, {:literal, meta, [lit]}}
   end
 
-  @spec extract_version_attr(ast :: Macro.t()) :: {:ok, String.t(), Span.t()} | nil
+  @spec decode_literal(Macro.t()) :: term
+  defp decode_literal(ast) do
+    Macro.prewalk(ast, fn
+      {:literal, _, [lit]} -> lit
+      node -> node
+    end)
+  end
+
+  @spec extract_version_attr(Macro.t()) :: {String.t(), Span.t()} | nil
   defp extract_version_attr(ast) do
     {_, result} =
       Bunch.Macro.prewalk_while(ast, nil, fn
-        t, {:ok, _} = acc ->
+        t, {_, _} = acc ->
           {:skip, t, acc}
 
         {:@, _, [{:version, _, [{:literal, _, [token]} = literal]}]} = t, _
         when is_binary(token) ->
-          {:skip, t, {:ok, token, Span.literal(literal)}}
+          {:skip, t, {token, Span.literal(literal)}}
 
         t, acc ->
           {:enter, t, acc}
       end)
 
     result
+  end
+
+  @spec extract_dependencies(Macro.t()) :: list(AnalysisReport.Dependency.t())
+  defp extract_dependencies(ast) do
+    ast |> extract_deps_list() |> Enum.map(&process_dep/1)
+  end
+
+  @spec extract_deps_list(Macro.t()) :: list(Macro.t())
+  defp extract_deps_list(ast) do
+    {_, result} =
+      Bunch.Macro.prewalk_while(ast, :not_found, fn
+        t, {:found, _} = acc ->
+          {:skip, t, acc}
+
+        {kw_def, _,
+         [
+           {:deps, _, nil},
+           [
+             {
+               {:literal, _, [:do]},
+               {:literal, _, [deps_list]}
+             }
+           ]
+         ]} = t,
+        :not_found
+        when kw_def in [:def, :defp] and is_list(deps_list) ->
+          {:skip, t, {:found, deps_list}}
+
+        t, :not_found ->
+          {:enter, t, :not_found}
+      end)
+
+    case result do
+      {:found, l} -> l
+      :not_found -> []
+    end
+  end
+
+  @spec process_dep(Macro.t()) :: AnalysisReport.Dependency.t()
+  defp process_dep(
+         {:literal, _,
+          [
+            {
+              {:literal, _, [name]},
+              {:literal, _, [version_spec]} = version_literal
+            }
+          ]}
+       )
+       when is_atom(name) and is_binary(version_spec) do
+    %AnalysisReport.Dependency{
+      name: name,
+      version_spec: version_spec,
+      version_spec_span: Span.literal(version_literal)
+    }
+  end
+
+  defp process_dep(
+         {:{}, _,
+          [
+            {:literal, _, [name]},
+            {:literal, _, [version_spec]} = version_literal,
+            _
+          ]}
+       )
+       when is_atom(name) and is_binary(version_spec) do
+    %AnalysisReport.Dependency{
+      name: name,
+      version_spec: version_spec,
+      version_spec_span: Span.literal(version_literal)
+    }
+  end
+
+  defp process_dep(
+         {:literal, tuple_meta,
+          [
+            {
+              {:literal, _, [name]},
+              [{first_key, _} | _] = kw
+            }
+          ]}
+       )
+       when is_atom(name) do
+    %AnalysisReport.Dependency{
+      name: name,
+      version_spec: kw |> decode_literal() |> Enum.into(%{}),
+      version_spec_span:
+        Span.literal(first_key) |> Span.set(Keyword.fetch!(tuple_meta, :closing), :end)
+    }
   end
 end

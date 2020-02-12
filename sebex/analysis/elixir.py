@@ -3,9 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from semver import parse_version_info
-
-from sebex.analysis.analyzer import AnalysisEntry
+from sebex.analysis.analyzer import AnalysisEntry, Dependency, VersionInfo
 from sebex.context import Context
 from sebex.edit import Span
 
@@ -21,6 +19,14 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
     proc = subprocess.run([Context.current().elixir_analyzer, '--mix', mix_file(project)],
                           capture_output=True, check=True)
     raw = json.loads(proc.stdout)
-    version = parse_version_info(raw['version'])
+
+    version = VersionInfo.parse(raw['version'])
     version_span = Span.from_raw(raw['version_span'])
-    return AnalysisEntry(version=version, version_span=version_span)
+
+    dependencies = [Dependency(
+        name=dep['name'],
+        version_spec=dep['version_spec'],
+        version_spec_span=Span.from_raw(dep['version_spec_span']),
+    ) for dep in raw['dependencies']]
+
+    return AnalysisEntry(version=version, version_span=version_span, dependencies=dependencies)

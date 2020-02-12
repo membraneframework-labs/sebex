@@ -24,7 +24,9 @@ defmodule Sebex.ElixirAnalyzerTest do
       defp deps do
         [
           {:jason, "~> 1.1"},
-          {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
+          {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
+          {:bunch, github: "membraneframework/bunch"},
+          {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
         ]
       end
     end
@@ -34,7 +36,29 @@ defmodule Sebex.ElixirAnalyzerTest do
 
     assert report == %AnalysisReport{
              version: "0.1.0",
-             version_span: Span.new(4, 12, 4, 19)
+             version_span: Span.new(4, 12, 4, 19),
+             dependencies: [
+               %AnalysisReport.Dependency{
+                 name: :jason,
+                 version_spec: "~> 1.1",
+                 version_spec_span: Span.new(17, 16, 17, 24)
+               },
+               %AnalysisReport.Dependency{
+                 name: :dialyxir,
+                 version_spec: "~> 1.0.0-rc.7",
+                 version_spec_span: Span.new(18, 19, 18, 34)
+               },
+               %AnalysisReport.Dependency{
+                 name: :bunch,
+                 version_spec: %{github: "membraneframework/bunch"},
+                 version_spec_span: Span.new(19, 16, 19, 49)
+               },
+               %AnalysisReport.Dependency{
+                 name: :dep_from_git,
+                 version_spec: %{git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+                 version_spec_span: Span.new(20, 23, 20, 85)
+               }
+             ]
            }
   end
 end
