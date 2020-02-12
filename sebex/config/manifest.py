@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Dict, Union, Iterable, Type, List
+from typing import NamedTuple, Dict, Union, Iterable, Type, List, Optional
 
 from git import Repo as GitRepo
 from github import Repository as GithubRepository
@@ -140,7 +140,7 @@ class Manifest(ConfigFile):
 
     _repository_index: Dict[str, int]
 
-    def __init__(self, name: Union[str, None], data):
+    def __init__(self, name: Optional[str], data):
         super().__init__(name, data)
 
         self._repository_index = {r['name']: i for i, r in enumerate(self._data['repositories'])}
@@ -158,7 +158,7 @@ class Manifest(ConfigFile):
         return repo
 
     def find_repository_by_name(self, name: Union[str, RepositoryHandle]) -> \
-            Union[RepositoryManifest, None]:
+            Optional[RepositoryManifest]:
         name = str(name)
 
         if name not in self._repository_index:

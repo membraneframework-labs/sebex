@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Type, TypeVar, Union
+from typing import Type, TypeVar, Optional
 
 from sebex.config.format import Format, JsonFormat
 
@@ -11,7 +11,7 @@ class ConfigFile:
     _name: str = None
     _data = None
 
-    def __init__(self, name: Union[str, None], data):
+    def __init__(self, name: Optional[str], data):
         if name is not None:
             self._name = name
 

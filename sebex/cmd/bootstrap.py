@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional
 
 import click
 
@@ -10,7 +10,7 @@ from sebex.context import Context
 @click.command()
 @click.option('-o', '--organization',
               help='Name of Github organization to import repositories from.')
-def bootstrap(organization: Union[str, None]):
+def bootstrap(organization: Optional[str]):
     """
     Set up workspace directories and/or load add all repositories from specified Github
     organization.

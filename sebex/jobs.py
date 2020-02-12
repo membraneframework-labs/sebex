@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from typing import TypeVar, Iterable, Callable, List, Union
+from typing import TypeVar, Iterable, Callable, List, Optional
 
 from sebex.context import Context
 from sebex.log import error
@@ -13,7 +13,7 @@ class JobError(Exception):
 
 
 def for_each(iterable: Iterable[T], f: Callable[[T], R],
-             desc: str, item_desc: Callable[[T], Union[str, None]] = str) -> List[R]:
+             desc: str, item_desc: Callable[[T], Optional[str]] = str) -> List[R]:
     context = Context.current()
 
     whole_iterable = list(iterable)
