@@ -4,12 +4,29 @@ defmodule Sebex.ElixirAnalyzer do
 
   @spec analyze_mix_exs_file!(path :: Path.t()) :: AnalysisReport.t() | no_return
   def analyze_mix_exs_file!(path) do
-    analyze_mix_exs_source!(File.read!(path))
+    mix_exs_source = File.read!(path)
+
+    mix_lock_path =
+      path
+      |> Path.dirname()
+      |> Path.join("mix.lock")
+
+    mix_lock_source =
+      case File.read(mix_lock_path) do
+        {:ok, source} -> source
+        {:error, :enoent} -> nil
+        {:error, e} -> raise {:error, {:failed_to_read_mix_lock, e}}
+      end
+
+    analyze_mix_exs_source!(mix_exs_source, mix_lock_source)
   end
 
-  @spec analyze_mix_exs_source!(source :: String.t()) :: AnalysisReport.t() | no_return
-  def analyze_mix_exs_source!(source) do
-    ast = parse!(source)
+  @spec analyze_mix_exs_source!(
+          mix_exs_source :: String.t(),
+          mix_lock_source :: String.t() | nil
+        ) :: AnalysisReport.t() | no_return
+  def analyze_mix_exs_source!(mix_exs_source, mix_lock_source \\ nil) do
+    ast = parse_for_analysis!(mix_exs_source)
 
     {version, version_span} =
       case extract_version_attr(ast) do
@@ -17,14 +34,23 @@ defmodule Sebex.ElixirAnalyzer do
         x -> x
       end
 
-    dependencies = extract_dependencies(ast)
+    version_locks =
+      mix_lock_source
+      |> parse_lock!()
+      |> extract_version_locks()
+
+    dependencies =
+      ast
+      |> extract_dependencies()
+      |> Enum.map(&%{&1 | version_lock: Map.get(version_locks, &1.name, nil)})
 
     %AnalysisReport{version: version, version_span: version_span, dependencies: dependencies}
   end
 
-  @spec parse!(source :: String.t()) :: Macro.t() | no_return
-  defp parse!(source) do
-    Code.string_to_quoted!(source,
+  @spec parse_for_analysis!(source :: String.t()) :: Macro.t() | no_return
+  defp parse_for_analysis!(source) do
+    Code.string_to_quoted!(
+      source,
       columns: true,
       token_metadata: true,
       literal_encoder: &encode_literal/2
@@ -42,6 +68,37 @@ defmodule Sebex.ElixirAnalyzer do
       node -> node
     end)
   end
+
+  # Dialyzer is going crazy here, do not know why...
+  @dialyzer {:nowarn_function, {:parse_lock!, 1}}
+  @spec parse_lock!(String.t() | nil) :: %{required(String.t()) => tuple} | no_return
+  defp parse_lock!(nil), do: %{}
+
+  defp parse_lock!(source) do
+    # Based on https://github.com/elixir-lang/elixir/blob/27bd9ffcc607b74ce56b547cb6ba92c9012c317c/lib/mix/lib/mix/dep/lock.ex#L8-L25
+
+    opts = [warn_on_unnecessary_quotes: false]
+
+    with {:ok, quoted} <- Code.string_to_quoted(source, opts),
+         {%{} = lock, _} <- Code.eval_quoted(quoted, [], opts) do
+      lock
+    else
+      _ -> raise {:error, :failed_to_parse_mix_lock}
+    end
+  end
+
+  @spec extract_version_locks(%{required(String.t()) => tuple}) ::
+          %{} | %{required(String.t()) => String.t()}
+  defp extract_version_locks(lock) do
+    lock
+    |> Enum.map(fn {name, tuple} -> {name, extract_version_lock_from_tuple(tuple)} end)
+    |> Enum.filter(fn {_, v} -> is_binary(v) end)
+    |> Enum.into(%{})
+  end
+
+  @spec extract_version_lock_from_tuple(tuple) :: String.t() | nil
+  defp extract_version_lock_from_tuple(tuple) when elem(tuple, 0) == :hex, do: elem(tuple, 2)
+  defp extract_version_lock_from_tuple(_), do: nil
 
   @spec extract_version_attr(Macro.t()) :: {String.t(), Span.t()} | nil
   defp extract_version_attr(ast) do
