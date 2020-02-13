@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sebex.analysis import elixir
-
 if TYPE_CHECKING:
     from sebex.config import ProjectHandle
     from sebex.analysis.analyzer import Analyzer
@@ -14,6 +12,8 @@ class Language(Enum):
 
     @classmethod
     def detect(cls, project: 'ProjectHandle') -> 'Language':
+        from . import elixir
+
         if elixir.mix_file(project).exists():
             return cls.ELIXIR
 
@@ -21,6 +21,8 @@ class Language(Enum):
 
     @property
     def analyzer(self) -> 'Analyzer':
+        from . import elixir
+
         if self == self.ELIXIR:
             return elixir.analyze
 

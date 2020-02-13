@@ -3,7 +3,8 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from sebex.analysis.analyzer import AnalysisEntry, Dependency, VersionInfo
+from sebex.analysis.analyzer import AnalysisEntry, Dependency
+from sebex.analysis.version import VersionSpec, Version
 from sebex.context import Context
 from sebex.edit import Span
 
@@ -20,23 +21,25 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
                           capture_output=True, check=True)
     raw = json.loads(proc.stdout)
 
-    version = VersionInfo.parse(raw['version'])
+    version = Version.parse(raw['version'])
     version_span = Span.from_raw(raw['version_span'])
 
     def load_dependency(dep):
+        name = dep['name']
+
         raw_version_lock = dep['version_lock']
         if raw_version_lock is not None:
-            version_lock = VersionInfo.parse(raw_version_lock)
+            version_lock = Version.parse(raw_version_lock)
         else:
             version_lock = None
 
-        return Dependency(
-            name=dep['name'],
-            version_spec=dep['version_spec'],
+        return name, Dependency(
+            name=name,
+            version_spec=VersionSpec.parse(dep['version_spec']),
             version_spec_span=Span.from_raw(dep['version_spec_span']),
             version_lock=version_lock
         )
 
-    dependencies = [load_dependency(dep) for dep in raw['dependencies']]
+    dependencies = dict(map(load_dependency, raw['dependencies']))
 
     return AnalysisEntry(version=version, version_span=version_span, dependencies=dependencies)

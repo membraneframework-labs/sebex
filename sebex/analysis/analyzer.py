@@ -1,7 +1,6 @@
-from typing import NamedTuple, Callable, Union, Dict, List, Optional
+from typing import NamedTuple, Callable, Dict, Optional
 
-from semver import VersionInfo
-
+from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
 from sebex.edit import Span
 
@@ -12,15 +11,15 @@ class AnalysisError(Exception):
 
 class Dependency(NamedTuple):
     name: str
-    version_spec: Union[str, Dict]
+    version_spec: VersionSpec
     version_spec_span: Span
-    version_lock: Optional[VersionInfo]
+    version_lock: Optional[Version]
 
 
 class AnalysisEntry(NamedTuple):
-    version: VersionInfo
+    version: Version
     version_span: Span
-    dependencies: List[Dependency]
+    dependencies: Dict[str, Dependency]
 
 
 Analyzer = Callable[[ProjectHandle], AnalysisEntry]

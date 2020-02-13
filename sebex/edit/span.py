@@ -23,3 +23,6 @@ class Span(NamedTuple):
             end_line=raw['end_line'],
             end_column=raw['end_column']
         )
+
+    def __str__(self):
+        return f'{self.start_line}:{self.start_column} - {self.end_line}:{self.end_column}'

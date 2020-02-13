@@ -8,10 +8,22 @@ from sebex.log import log, success
 
 
 class AnalysisDatabase:
-    _project_info: Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
+    _data: Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
 
     def __init__(self, repo_info) -> None:
-        self._project_info = repo_info
+        self._data = repo_info
+
+    def projects(self) -> Iterable[ProjectHandle]:
+        return self._data.keys()
+
+    def __contains__(self, project: ProjectHandle) -> bool:
+        return project in self._data
+
+    def language(self, project: ProjectHandle) -> Language:
+        return self._data[project][0]
+
+    def about(self, project: ProjectHandle) -> AnalysisEntry:
+        return self._data[project][1]
 
     @classmethod
     def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
