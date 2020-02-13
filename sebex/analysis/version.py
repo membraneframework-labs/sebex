@@ -1,5 +1,7 @@
+import enum
 import re
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import Tuple, NewType, Set, Union, Dict
 
 import semver
@@ -15,14 +17,22 @@ VersionOperator = NewType('VersionOperator', str)
 VERSION_OPERATORS: Set[VersionOperator] = {VersionOperator(o) for o in
                                            ['==', '!=', '>', '<', '>=', '<=', '~>']}
 
-Pin = NewType('Pin', int)
-'''
-Denotes until which part of the base version should version requirement match exactly.
 
-Possible values:
- - `0`, which means major release, for example `~> 2.1` and will pin to versions `2.x.x`
- - `1`, minor release, `~> 2.1.2` pins to `2.1.x`
-'''
+class Pin(IntEnum):
+    """
+    Denotes until which part of the base version should version requirement match exactly.
+
+    Possible values:
+     - :MAJOR, which means major release, for example `~> 2.1` and will pin to versions `2.x.x`
+     - :MINOR, minor release, `~> 2.1.2` pins to `2.1.x`
+    """
+
+    MAJOR = enum.auto()
+    MINOR = enum.auto()
+
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
+
 
 _SHORT_REGEX = re.compile(
     r'^(?P<major>(?:0|[1-9][0-9]*))\.(?P<minor>(?:0|[1-9][0-9]*))$',
@@ -61,9 +71,19 @@ class VersionRequirement:
     def _parse_base(cls, base_str: str) -> Tuple[Version, Pin]:
         match = _SHORT_REGEX.match(base_str)
         if match:
-            return Version(major=int(match['major']), minor=int(match['minor']), patch=0), Pin(0)
+            return Version(int(match['major']), int(match['minor']), 0), Pin.MAJOR
 
-        return Version.parse(base_str), Pin(1)
+        return Version.parse(base_str), Pin.MINOR
+
+    def __str__(self):
+        if self.pin == Pin.MAJOR:
+            base_str = f'{self.base.major}.{self.base.minor}'
+        elif self.pin == Pin.MINOR:
+            base_str = str(self.base)
+        else:
+            assert False, 'unreachable'
+
+        return f'{self.operator} {base_str}'
 
 
 @dataclass(frozen=True)
