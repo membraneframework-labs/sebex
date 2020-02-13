@@ -12,17 +12,17 @@ class Format(ABC):
     @classmethod
     @abstractmethod
     def ext(cls) -> str:
-        pass
+        ...
 
     @classmethod
     @abstractmethod
     def load(cls, fp: TextIO):
-        pass
+        ...
 
     @classmethod
     @abstractmethod
     def dump(cls, data, fp: TextIO):
-        pass
+        ...
 
     @classmethod
     def full_path(cls, name: str) -> Path:

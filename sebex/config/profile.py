@@ -13,7 +13,7 @@ PROFILE_PREFIX = 'profiles/'
 class Profile(ABC):
     @abstractmethod
     def apply(self, manifest: Manifest) -> Iterable[RepositoryManifest]:
-        pass
+        ...
 
 
 class AllProfile(Profile):
