@@ -12,4 +12,4 @@ def graph():
 
     database = AnalysisDatabase.collect(current_project_handles())
     pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(database._data)
+    pp.pprint(database)

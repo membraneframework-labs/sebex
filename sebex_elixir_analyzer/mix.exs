@@ -14,6 +14,12 @@ defmodule Sebex.ElixirAnalyzer.MixProject do
     ]
   end
 
+  def application do
+    [
+      extra_applications: [:mix]
+    ]
+  end
+
   defp escript do
     [
       main_module: Sebex.ElixirAnalyzer.CLI

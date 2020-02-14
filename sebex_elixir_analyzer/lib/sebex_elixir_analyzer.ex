@@ -26,6 +26,14 @@ defmodule Sebex.ElixirAnalyzer do
           mix_lock_source :: String.t() | nil
         ) :: AnalysisReport.t() | no_return
   def analyze_mix_exs_source!(mix_exs_source, mix_lock_source \\ nil) do
+    project_info = load_mix_exs_from_source!(mix_exs_source)
+
+    package_name =
+      (get_in(project_info, [:package, :name]) ||
+         get_in(project_info, [:app]) ||
+         raise({:error, :package_name_undefined}))
+      |> to_string
+
     ast = parse_for_analysis!(mix_exs_source)
 
     {version, version_span} =
@@ -44,7 +52,24 @@ defmodule Sebex.ElixirAnalyzer do
       |> extract_dependencies()
       |> Enum.map(&%{&1 | version_lock: Map.get(version_locks, &1.name, nil)})
 
-    %AnalysisReport{version: version, version_span: version_span, dependencies: dependencies}
+    %AnalysisReport{
+      package: package_name,
+      version: version,
+      version_span: version_span,
+      dependencies: dependencies
+    }
+  end
+
+  @spec load_mix_exs_from_source!(source :: String.t()) :: Keyword.t()
+  defp load_mix_exs_from_source!(source) do
+    {{:module, module, _, _}, _} = Code.eval_string(source, file: "mix.exs")
+
+    project_info = apply(module, :project, [])
+
+    :code.delete(module)
+    :code.purge(module)
+
+    project_info
   end
 
   @spec parse_for_analysis!(source :: String.t()) :: Macro.t() | no_return

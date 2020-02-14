@@ -17,6 +17,7 @@ class Dependency(NamedTuple):
 
 
 class AnalysisEntry(NamedTuple):
+    package: str
     version: Version
     version_span: Span
     dependencies: Dict[str, Dependency]

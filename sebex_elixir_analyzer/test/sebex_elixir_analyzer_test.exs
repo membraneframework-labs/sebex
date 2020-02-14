@@ -1,5 +1,5 @@
 defmodule Sebex.ElixirAnalyzerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   doctest Sebex.ElixirAnalyzer
 
   alias Sebex.ElixirAnalyzer.AnalysisReport
@@ -44,6 +44,7 @@ defmodule Sebex.ElixirAnalyzerTest do
     report = Sebex.ElixirAnalyzer.analyze_mix_exs_source!(@simple_mix_exs, @simple_mix_lock)
 
     assert report == %AnalysisReport{
+             package: "example",
              version: "0.1.0",
              version_span: Span.new(4, 12, 4, 19),
              dependencies: [
@@ -70,6 +71,41 @@ defmodule Sebex.ElixirAnalyzerTest do
                  version_spec_span: Span.new(20, 23, 20, 85)
                }
              ]
+           }
+  end
+
+  @mix_exs_with_package_name """
+  defmodule Some.Example.ProjectWithCustomPackageName do
+    use Mix.Project
+
+    @version "0.1.0"
+
+    def project do
+      [
+        app: :app_name,
+        version: @version,
+        elixir: "~> 1.10",
+        package: package(),
+        deps: []
+      ]
+    end
+
+    defp package do
+      [
+        name: :package_name
+      ]
+    end
+  end
+  """
+
+  test "mix.exs with custom package name" do
+    report = Sebex.ElixirAnalyzer.analyze_mix_exs_source!(@mix_exs_with_package_name)
+
+    assert report == %AnalysisReport{
+             package: "package_name",
+             version: "0.1.0",
+             version_span: Span.new(4, 12, 4, 19),
+             dependencies: []
            }
   end
 end

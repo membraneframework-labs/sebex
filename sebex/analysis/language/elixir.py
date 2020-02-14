@@ -21,6 +21,7 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
                           capture_output=True, check=True)
     raw = json.loads(proc.stdout)
 
+    package = raw['package']
     version = Version.parse(raw['version'])
     version_span = Span.from_raw(raw['version_span'])
 
@@ -42,4 +43,5 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
 
     dependencies = dict(map(load_dependency, raw['dependencies']))
 
-    return AnalysisEntry(version=version, version_span=version_span, dependencies=dependencies)
+    return AnalysisEntry(package=package, version=version, version_span=version_span,
+                         dependencies=dependencies)

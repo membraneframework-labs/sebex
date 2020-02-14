@@ -1,35 +1,60 @@
-from typing import Dict, Iterable, Tuple
+from dataclasses import dataclass
+from typing import Dict, Iterable, Tuple, Union
 
-from sebex.analysis.analyzer import AnalysisEntry
+from sebex.analysis.analyzer import AnalysisEntry, AnalysisError
 from sebex.analysis.language import Language
 from sebex.config import ProjectHandle
 from sebex.jobs import for_each
 from sebex.log import log, success
 
+_Projects = Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
+_PackageNameIndex = Dict[str, ProjectHandle]
 
+
+@dataclass(eq=False)
 class AnalysisDatabase:
-    _data: Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
-
-    def __init__(self, repo_info) -> None:
-        self._data = repo_info
+    _projects: _Projects
+    _package_name_index: _PackageNameIndex
 
     def projects(self) -> Iterable[ProjectHandle]:
-        return self._data.keys()
+        return self._projects.keys()
 
-    def __contains__(self, project: ProjectHandle) -> bool:
-        return project in self._data
+    def packages(self) -> Iterable[str]:
+        return self._package_name_index.keys()
+
+    def has_project(self, project: ProjectHandle) -> bool:
+        return project in self._projects
+
+    def has_package(self, package: str) -> bool:
+        return package in self._package_name_index
+
+    def __contains__(self, item: Union[ProjectHandle, str]) -> bool:
+        if isinstance(item, ProjectHandle):
+            return self.has_project(item)
+        elif isinstance(item, str):
+            return self.has_package(item)
+        else:
+            return False
 
     def language(self, project: ProjectHandle) -> Language:
-        return self._data[project][0]
+        return self._projects[project][0]
 
     def about(self, project: ProjectHandle) -> AnalysisEntry:
-        return self._data[project][1]
+        return self._projects[project][1]
 
     @classmethod
     def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
         projects = list(projects)
+
         project_info = dict(zip(projects, for_each(projects, cls._do_collect, desc='Analyzing')))
-        return AnalysisDatabase(project_info)
+
+        log('Building analysis database')
+
+        package_name_index = cls._build_package_name_index(project_info)
+
+        success('Database built successfully')
+
+        return AnalysisDatabase(project_info, package_name_index)
 
     @staticmethod
     def _do_collect(project: ProjectHandle) -> Tuple[Language, AnalysisEntry]:
@@ -40,3 +65,13 @@ class AnalysisDatabase:
 
         success('Analyzed', project)
         return language, entry
+
+    @classmethod
+    def _build_package_name_index(cls, projects: _Projects) -> _PackageNameIndex:
+        index = dict()
+        for project, (_, entry) in projects.items():
+            if entry.package not in index:
+                index[entry.package] = project
+            else:
+                raise AnalysisError(f'Duplicate package name: "{entry.package}"')
+        return index
