@@ -11,8 +11,6 @@ from .cmd.sync import sync
 from .context import Context
 from .log import FatalError
 
-load_dotenv()
-
 
 @click.group()
 @click.version_option(__version__)
@@ -39,7 +37,9 @@ cli.add_command(graph)
 cli.add_command(ls)
 cli.add_command(sync)
 
-try:
-    cli(auto_envvar_prefix='SEBEX')
-except FatalError:
-    pass
+if __name__ == '__main__':
+    try:
+        load_dotenv()
+        cli(auto_envvar_prefix='SEBEX')
+    except FatalError:
+        pass
