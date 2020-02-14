@@ -40,13 +40,15 @@ class AnalysisDatabase:
     @classmethod
     def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
         projects = list(projects)
+        projects = dict(zip(projects, for_each(projects, cls._do_collect, desc='Analyzing')))
+        return cls._analyze(projects)
 
-        project_info = dict(zip(projects, for_each(projects, cls._do_collect, desc='Analyzing')))
-
+    @classmethod
+    def _analyze(cls, projects: _Projects) -> 'AnalysisDatabase':
         with operation('Building analysis database'):
-            package_name_index = cls._build_package_name_index(project_info)
+            package_name_index = cls._build_package_name_index(projects)
 
-        return AnalysisDatabase(project_info, package_name_index)
+        return cls(projects, package_name_index)
 
     @staticmethod
     def _do_collect(project: ProjectHandle) -> Tuple[Language, AnalysisEntry]:

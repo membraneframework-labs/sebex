@@ -13,7 +13,7 @@ class Dependency(NamedTuple):
     name: str
     version_spec: VersionSpec
     version_spec_span: Span
-    version_lock: Optional[Version]
+    version_lock: Optional[Version] = None
 
     def version_str(self):
         result = str(self.version_spec.value)
