@@ -1,4 +1,5 @@
-from typing import NamedTuple, Callable, Optional, List
+from dataclasses import dataclass, field
+from typing import Callable, Optional, List
 
 from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
@@ -9,7 +10,8 @@ class AnalysisError(Exception):
     pass
 
 
-class Dependency(NamedTuple):
+@dataclass(order=True, frozen=True)
+class Dependency:
     name: str
     version_spec: VersionSpec
     version_spec_span: Span
@@ -22,11 +24,12 @@ class Dependency(NamedTuple):
         return result
 
 
-class AnalysisEntry(NamedTuple):
+@dataclass
+class AnalysisEntry:
     package: str
     version: Version
     version_span: Span
-    dependencies: List[Dependency] = []
+    dependencies: List[Dependency] = field(default_factory=list)
 
 
 Analyzer = Callable[[ProjectHandle], AnalysisEntry]

@@ -1,7 +1,9 @@
-from typing import NamedTuple, Dict
+from dataclasses import dataclass
+from typing import Dict
 
 
-class Span(NamedTuple):
+@dataclass(order=True, frozen=True)
+class Span:
     start_line: int
     start_column: int
     end_line: int
