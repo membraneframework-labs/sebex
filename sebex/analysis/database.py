@@ -5,7 +5,7 @@ from sebex.analysis.analyzer import AnalysisEntry, AnalysisError
 from sebex.analysis.language import Language
 from sebex.config import ProjectHandle
 from sebex.jobs import for_each
-from sebex.log import log, success
+from sebex.log import operation
 
 _Projects = Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
 _PackageNameIndex = Dict[str, ProjectHandle]
@@ -48,23 +48,17 @@ class AnalysisDatabase:
 
         project_info = dict(zip(projects, for_each(projects, cls._do_collect, desc='Analyzing')))
 
-        log('Building analysis database')
-
-        package_name_index = cls._build_package_name_index(project_info)
-
-        success('Database built successfully')
+        with operation('Building analysis database'):
+            package_name_index = cls._build_package_name_index(project_info)
 
         return AnalysisDatabase(project_info, package_name_index)
 
     @staticmethod
     def _do_collect(project: ProjectHandle) -> Tuple[Language, AnalysisEntry]:
-        log('Analyzing', project)
-
-        language = Language.detect(project)
-        entry = language.analyzer(project)
-
-        success('Analyzed', project)
-        return language, entry
+        with operation('Analyzing', project):
+            language = Language.detect(project)
+            entry = language.analyzer(project)
+            return language, entry
 
     @classmethod
     def _build_package_name_index(cls, projects: _Projects) -> _PackageNameIndex:

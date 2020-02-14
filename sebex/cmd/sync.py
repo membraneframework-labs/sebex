@@ -3,7 +3,7 @@ from git import Repo
 
 from sebex.config import current_repositories, RepositoryManifest
 from sebex.jobs import for_each
-from sebex.log import error, log, success
+from sebex.log import error, success, operation
 
 
 @click.command()
@@ -16,20 +16,18 @@ def sync(clone, fetch):
         repo = manifest.handle
         if not repo.exists():
             if clone:
-                log('Cloning', repo)
-                Repo.clone_from(manifest.remote_url, manifest.location)
+                with operation('Cloning', repo):
+                    Repo.clone_from(manifest.remote_url, manifest.location)
             else:
                 error('Repository is not cloned:', repo)
         else:
             if fetch:
-                log('Fetching', repo)
-                repo.git.remote().fetch(refspec='refs/heads/*:refs/remotes/origin/*')
-                repo.git.remote().fetch(refspec='refs/tags/*:refs/tags/*')
+                with operation('Fetching', repo):
+                    repo.git.remote().fetch(refspec='refs/heads/*:refs/remotes/origin/*')
+                    repo.git.remote().fetch(refspec='refs/tags/*:refs/tags/*')
             else:
-                log('Pulling', repo)
-                repo.git.remote().pull()
-
-        success('Synced', repo)
+                with operation('Pulling', repo):
+                    repo.git.remote().pull()
 
     repos = list(current_repositories())
     for_each(repos, do_sync, desc='Syncing', item_desc=lambda r: r.handle)

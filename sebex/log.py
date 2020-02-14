@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import click
 
 
@@ -27,3 +29,15 @@ class FatalError(Exception):
 def fatal(*msg):
     error('FATAL:', *msg)
     raise FatalError()
+
+
+@contextmanager
+def operation(*msg):
+    log(*msg, '...')
+    try:
+        yield None
+    except:
+        log(*msg, click.style('ERROR', fg='red'))
+        raise
+    finally:
+        log(*msg, click.style('OK', fg='green'))
