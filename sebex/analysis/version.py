@@ -1,4 +1,3 @@
-import enum
 import re
 from dataclasses import dataclass
 from enum import IntEnum
@@ -23,12 +22,17 @@ class Pin(IntEnum):
     Denotes until which part of the base version should version requirement match exactly.
 
     Possible values:
-     - :MAJOR, which means major release, for example `~> 2.1` and will pin to versions `2.x.x`
-     - :MINOR, minor release, `~> 2.1.2` pins to `2.1.x`
+     - `MAJOR`, which means major release, for example `~> 2.1` and will pin to versions `2.x.x`
+     - `MINOR`, minor release, `~> 2.1.2` pins to `2.1.x and >= 2.1.2`
+
+    An ordering is defined, reflecting how much specific the pin is:
+
+    >>> Pin.MINOR < Pin.MAJOR
+    True
     """
 
-    MAJOR = enum.auto()
-    MINOR = enum.auto()
+    MAJOR = 1
+    MINOR = 0
 
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
