@@ -13,8 +13,8 @@ _Edges = Dict[str, Dependency]
 _Graph = Dict[str, _Edges]
 
 
-@dataclass
-class DependencyGraph:
+@dataclass(frozen=True)
+class DependentsGraph:
     _graph: _Graph
 
     def __len__(self):
@@ -54,7 +54,7 @@ class DependencyGraph:
         return dot
 
     @classmethod
-    def build(cls, db: AnalysisDatabase) -> 'DependencyGraph':
+    def build(cls, db: AnalysisDatabase) -> 'DependentsGraph':
         with operation('Building dependency graph'):
             return cls(cls._guard_cycle({
                 db.about(project).package: cls._collect_edges(project, db)

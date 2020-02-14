@@ -1,6 +1,6 @@
 import click
 
-from sebex.analysis import AnalysisDatabase, DependencyGraph
+from sebex.analysis import AnalysisDatabase, DependentsGraph
 from sebex.config import current_project_handles
 
 
@@ -10,7 +10,7 @@ def graph(view):
     """Collect and analyze repository dependency graph."""
 
     database = AnalysisDatabase.collect(current_project_handles())
-    dep_graph = DependencyGraph.build(database)
+    dep_graph = DependentsGraph.build(database)
     dot = dep_graph.graphviz(database)
     if view:
         dot.view(cleanup=True)

@@ -1,6 +1,6 @@
 import pytest
 
-from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, DependencyGraph
+from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, DependentsGraph
 from sebex.analysis.analyzer import AnalysisEntry, Dependency
 from sebex.config import ProjectHandle
 from sebex.edit import Span
@@ -11,7 +11,7 @@ SPAN = Span(0, 0, 0, 5)
 
 def test_builds_empty_database():
     db = MockAnalysisDatabase.mock({})
-    graph = DependencyGraph.build(db)
+    graph = DependentsGraph.build(db)
     assert len(graph) == 0
 
 
@@ -56,7 +56,7 @@ def test_builds_simple():
         ))
     })
 
-    graph = DependencyGraph.build(db)
+    graph = DependentsGraph.build(db)
 
     assert len(graph) == 3
     assert list(graph._graph['a'].keys()) == ['b', 'c']
@@ -108,7 +108,7 @@ def test_build_detects_cycles():
     })
 
     with pytest.raises(ValueError, match='a->b->c->a'):
-        DependencyGraph.build(db)
+        DependentsGraph.build(db)
 
 
 def test_dependents_on():
@@ -168,7 +168,7 @@ def test_dependents_on():
         ))
     })
 
-    graph = DependencyGraph.build(db)
+    graph = DependentsGraph.build(db)
 
     assert graph.dependents_of('a') == {'b', 'c'}
     assert graph.dependents_of('a', recursive=True) == {'b', 'c', 'd'}
