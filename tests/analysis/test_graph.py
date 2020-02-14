@@ -17,7 +17,7 @@ def test_builds_empty_database():
 
 def test_builds_simple():
     db = MockAnalysisDatabase.mock({
-        ProjectHandle.root('a'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(
             package='a',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -36,7 +36,7 @@ def test_builds_simple():
                 )
             ]
         )),
-        ProjectHandle.root('b'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
             package='b',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -49,7 +49,7 @@ def test_builds_simple():
                 )
             ]
         )),
-        ProjectHandle.root('c'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('c'): (Language.ELIXIR, AnalysisEntry(
             package='c',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -66,7 +66,7 @@ def test_builds_simple():
 
 def test_build_detects_cycles():
     db = MockAnalysisDatabase.mock({
-        ProjectHandle.root('a'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(
             package='a',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -79,7 +79,7 @@ def test_build_detects_cycles():
                 )
             ]
         )),
-        ProjectHandle.root('b'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
             package='b',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -92,7 +92,7 @@ def test_build_detects_cycles():
                 )
             ]
         )),
-        ProjectHandle.root('c'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('c'): (Language.ELIXIR, AnalysisEntry(
             package='c',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -113,7 +113,7 @@ def test_build_detects_cycles():
 
 def test_dependents_on():
     db = MockAnalysisDatabase.mock({
-        ProjectHandle.root('a'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(
             package='a',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -132,7 +132,7 @@ def test_dependents_on():
                 )
             ]
         )),
-        ProjectHandle.root('b'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
             package='b',
             version=Version(1, 0, 0),
             version_span=SPAN,
@@ -151,17 +151,17 @@ def test_dependents_on():
                 )
             ]
         )),
-        ProjectHandle.root('c'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('c'): (Language.ELIXIR, AnalysisEntry(
             package='c',
             version=Version(1, 0, 0),
             version_span=SPAN,
         )),
-        ProjectHandle.root('d'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('d'): (Language.ELIXIR, AnalysisEntry(
             package='d',
             version=Version(1, 0, 0),
             version_span=SPAN,
         )),
-        ProjectHandle.root('e'): (Language.ELIXIR, AnalysisEntry(
+        ProjectHandle.parse('e:unused'): (Language.ELIXIR, AnalysisEntry(
             package='e',
             version=Version(1, 0, 0),
             version_span=SPAN,

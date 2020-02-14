@@ -67,6 +67,18 @@ class ProjectHandle:
     def exists(self) -> bool:
         return self.location.exists()
 
+    @classmethod
+    def parse(cls, string: str) -> 'ProjectHandle':
+        if ':' not in string:
+            return cls.root(string)
+
+        [repo, path] = string.split(':', maxsplit=1)
+
+        if not repo or not path:
+            raise ValueError('Invalid project handle')
+
+        return cls(RepositoryHandle(repo), Path(path))
+
     def __str__(self):
         if not self.is_root:
             return f'{self.repo}:{self.path}'
