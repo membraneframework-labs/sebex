@@ -26,7 +26,7 @@ class AnalysisEntry(NamedTuple):
     package: str
     version: Version
     version_span: Span
-    dependencies: List[Dependency]
+    dependencies: List[Dependency] = []
 
 
 Analyzer = Callable[[ProjectHandle], AnalysisEntry]

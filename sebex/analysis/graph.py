@@ -16,6 +16,9 @@ _Graph = Dict[str, _Edges]
 class DependencyGraph:
     _graph: _Graph
 
+    def __len__(self):
+        return len(self._graph)
+
     def graphviz(self, db: AnalysisDatabase) -> Digraph:
         dot = Digraph()
 
