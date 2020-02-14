@@ -13,6 +13,7 @@ class AnalysisError(Exception):
 @dataclass(order=True, frozen=True)
 class Dependency:
     name: str
+    defined_in: str
     version_spec: VersionSpec
     version_spec_span: Span
     version_lock: Optional[Version] = None

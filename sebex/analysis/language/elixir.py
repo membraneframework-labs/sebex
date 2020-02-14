@@ -36,6 +36,7 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
 
         return Dependency(
             name=name,
+            defined_in=package,
             version_spec=VersionSpec.parse(dep['version_spec']),
             version_spec_span=Span.from_raw(dep['version_spec_span']),
             version_lock=version_lock

@@ -1,5 +1,6 @@
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from graphviz import Digraph
 
@@ -18,6 +19,25 @@ class DependencyGraph:
 
     def __len__(self):
         return len(self._graph)
+
+    def dependents_of(self, *args, **kwargs) -> Set[str]:
+        return set(self.dependents_of_detailed(*args, **kwargs).keys())
+
+    def dependents_of_detailed(self, package: str,
+                               recursive: bool = False) -> Dict[str, Set[Dependency]]:
+        result = defaultdict(set)
+
+        def visit(pkg: str):
+            for dep in self._graph[pkg].values():
+                result[dep.name].add(dep)
+
+            if recursive:
+                for dep in self._graph[pkg].keys():
+                    visit(dep)
+
+        visit(package)
+
+        return result
 
     def graphviz(self, db: AnalysisDatabase) -> Digraph:
         dot = Digraph()
