@@ -13,6 +13,7 @@ colorama = "*"
 semver = "~=2.9"
 click = "~=7.0"
 pyyaml = "~=5.3"
+graphviz = "*"
 
 [requires]
 python_version = "3.7"

@@ -34,14 +34,14 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
         else:
             version_lock = None
 
-        return name, Dependency(
+        return Dependency(
             name=name,
             version_spec=VersionSpec.parse(dep['version_spec']),
             version_spec_span=Span.from_raw(dep['version_spec_span']),
             version_lock=version_lock
         )
 
-    dependencies = dict(map(load_dependency, raw['dependencies']))
+    dependencies = list(map(load_dependency, raw['dependencies']))
 
     return AnalysisEntry(package=package, version=version, version_span=version_span,
                          dependencies=dependencies)

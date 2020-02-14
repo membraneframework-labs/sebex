@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Iterable, Tuple, Union
+from typing import Dict, Iterable, Tuple
 
 from sebex.analysis.analyzer import AnalysisEntry, AnalysisError
 from sebex.analysis.language import Language
@@ -19,22 +19,17 @@ class AnalysisDatabase:
     def projects(self) -> Iterable[ProjectHandle]:
         return self._projects.keys()
 
-    def packages(self) -> Iterable[str]:
+    def managed_packages(self) -> Iterable[str]:
         return self._package_name_index.keys()
 
     def has_project(self, project: ProjectHandle) -> bool:
         return project in self._projects
 
-    def has_package(self, package: str) -> bool:
+    def is_package_managed(self, package: str) -> bool:
         return package in self._package_name_index
 
-    def __contains__(self, item: Union[ProjectHandle, str]) -> bool:
-        if isinstance(item, ProjectHandle):
-            return self.has_project(item)
-        elif isinstance(item, str):
-            return self.has_package(item)
-        else:
-            return False
+    def get_project_by_package(self, package: str) -> ProjectHandle:
+        return self._package_name_index[package]
 
     def language(self, project: ProjectHandle) -> Language:
         return self._projects[project][0]
