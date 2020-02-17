@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from sebex.analysis.analyzer import AnalysisEntry, Dependency
+from sebex.analysis.analyzer import AnalysisEntry, Dependency, Release
 from sebex.analysis.version import VersionSpec, Version
 from sebex.context import Context
 from sebex.edit import Span
@@ -44,5 +44,17 @@ def analyze(project: 'ProjectHandle') -> AnalysisEntry:
 
     dependencies = list(map(load_dependency, raw['dependencies']))
 
+    hex_info = raw['hex']
+    if hex_info['published']:
+        def load_release(rel):
+            return Release(
+                version=Version.parse(rel['version']),
+                retired=bool(rel.get('retired', False))
+            )
+
+        releases = list(map(load_release, hex_info['versions']))
+    else:
+        releases = []
+
     return AnalysisEntry(package=package, version=version, version_span=version_span,
-                         dependencies=dependencies)
+                         dependencies=dependencies, releases=releases)

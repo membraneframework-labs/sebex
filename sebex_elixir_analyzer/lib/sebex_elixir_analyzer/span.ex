@@ -50,7 +50,7 @@ defmodule Sebex.ElixirAnalyzer.Span do
   @spec literal(literal :: {:literal, Keyword.t(), [term]}) :: t()
   def literal({:literal, meta, [str]}) when is_binary(str) do
     if String.contains?(str, "\n") do
-      raise {:error, "finding spans for multiline strings is not implemented"}
+      raise "finding spans for multiline strings is not implemented"
     end
 
     start_line = Keyword.fetch!(meta, :line)

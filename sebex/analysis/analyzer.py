@@ -25,12 +25,23 @@ class Dependency:
         return result
 
 
+@dataclass(order=True, frozen=True)
+class Release:
+    version: Version
+    retired: bool = False
+
+
 @dataclass
 class AnalysisEntry:
     package: str
     version: Version
     version_span: Span
     dependencies: List[Dependency] = field(default_factory=list)
+    releases: List[Release] = field(default_factory=list)
+
+    @property
+    def is_published(self) -> bool:
+        return bool(self.releases)
 
 
 Analyzer = Callable[[ProjectHandle], AnalysisEntry]

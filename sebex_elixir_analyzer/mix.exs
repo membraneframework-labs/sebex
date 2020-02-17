@@ -16,7 +16,7 @@ defmodule Sebex.ElixirAnalyzer.MixProject do
 
   def application do
     [
-      extra_applications: [:mix]
+      extra_applications: [:mix, :inets, :ssl]
     ]
   end
 
@@ -30,7 +30,9 @@ defmodule Sebex.ElixirAnalyzer.MixProject do
     [
       {:bunch, github: "membraneframework/bunch"},
       {:jason, "~> 1.1"},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
+      {:hex_core, "~> 0.6.8"},
+      {:dialyxir, "~> 1.0.0-rc.7", only: :dev, runtime: false},
+      {:mock, "~> 0.3.4", only: [:test]}
     ]
   end
 end
