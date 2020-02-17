@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Tuple, NewType, Set, Union, Dict
+from typing import Tuple, NewType, Set, Union, Dict, Optional
 
 import semver
 
@@ -91,10 +91,49 @@ class VersionRequirement:
 
 
 @dataclass(frozen=True)
+class GitRequirement:
+    uri: str
+    is_github: bool
+    ref: Optional[str] = None
+    branch: Optional[str] = None
+    tag: Optional[str] = None
+    submodules: bool = False
+    sparse: bool = False
+
+    @classmethod
+    def from_dict(cls, raw: Dict) -> 'GitRequirement':
+        if 'github' in raw:
+            uri = raw['github']
+            is_github = True
+        else:
+            uri = raw['git']
+            is_github = False
+
+        return cls(
+            uri=uri,
+            is_github=is_github,
+            ref=raw.get('ref'),
+            branch=raw.get('branch'),
+            tag=raw.get('tag'),
+            submodules=raw.get('submodules', False),
+            sparse=raw.get('sparse', False),
+        )
+
+
+@dataclass(frozen=True)
+class PathRequirement:
+    path: str
+
+    @classmethod
+    def from_dict(cls, raw: Dict) -> 'PathRequirement':
+        return cls(raw['path'])
+
+
+@dataclass(frozen=True)
 class VersionSpec:
     __slots__ = ['value']
 
-    value: Union[VersionRequirement, Dict]
+    value: Union[VersionRequirement, GitRequirement, PathRequirement]
 
     @property
     def is_version(self) -> bool:
@@ -102,13 +141,17 @@ class VersionSpec:
 
     @property
     def is_external(self) -> bool:
-        return isinstance(self.value, dict)
+        return isinstance(self.value, GitRequirement) or isinstance(self.value, PathRequirement)
 
     @classmethod
     def parse(cls, raw) -> 'VersionSpec':
         if isinstance(raw, str):
             return cls(VersionRequirement.parse(raw))
-        elif isinstance(raw, dict):
-            return cls(raw)
-        else:
-            raise ValueError(f'Unable to parse version spec: {repr(raw)}')
+
+        if isinstance(raw, dict):
+            if 'path' in raw:
+                return cls(PathRequirement.from_dict(raw))
+            if 'git' in raw or 'github' in raw:
+                return cls(GitRequirement.from_dict(raw))
+
+        raise ValueError(f'Unable to parse version spec: {raw!r}')
