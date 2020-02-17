@@ -37,7 +37,24 @@ class DependentsGraph:
 
         visit(package)
 
-        return result
+        return dict(result)
+
+    def upgrade_phases(self, package: str) -> List[Set[str]]:
+        depths = defaultdict(lambda: 0)
+
+        def visit(pkg: str, depth: int):
+            depths[pkg] = max(depths[pkg], depth)
+
+            for dep in self._graph[pkg].keys():
+                visit(dep, depth + 1)
+
+        visit(package, 0)
+
+        inverse = defaultdict(set)
+        for pkg, depth in sorted(depths.items(), key=lambda t: t[1]):
+            inverse[depth].add(pkg)
+
+        return list(inverse.values())
 
     def graphviz(self, db: AnalysisDatabase) -> Digraph:
         dot = Digraph()
