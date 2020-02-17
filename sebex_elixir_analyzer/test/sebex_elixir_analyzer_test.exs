@@ -3,6 +3,7 @@ defmodule Sebex.ElixirAnalyzerTest do
   doctest Sebex.ElixirAnalyzer
 
   alias Sebex.ElixirAnalyzer.AnalysisReport
+  alias Sebex.ElixirAnalyzer.SourceAnalysis.Dependency
   alias Sebex.ElixirAnalyzer.Span
 
   @simple_mix_exs """
@@ -48,24 +49,24 @@ defmodule Sebex.ElixirAnalyzerTest do
              version: "0.1.0",
              version_span: Span.new(4, 12, 4, 19),
              dependencies: [
-               %AnalysisReport.Dependency{
+               %Dependency{
                  name: :jason,
                  version_spec: "~> 1.1",
                  version_spec_span: Span.new(17, 16, 17, 24),
                  version_lock: "1.1.2"
                },
-               %AnalysisReport.Dependency{
+               %Dependency{
                  name: :dialyxir,
                  version_spec: "~> 1.0.0-rc.7",
                  version_spec_span: Span.new(18, 19, 18, 34),
                  version_lock: "1.0.0-rc.7"
                },
-               %AnalysisReport.Dependency{
+               %Dependency{
                  name: :bunch,
                  version_spec: %{github: "membraneframework/bunch"},
                  version_spec_span: Span.new(19, 16, 19, 49)
                },
-               %AnalysisReport.Dependency{
+               %Dependency{
                  name: :dep_from_git,
                  version_spec: %{git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
                  version_spec_span: Span.new(20, 23, 20, 85)
