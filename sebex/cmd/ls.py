@@ -4,7 +4,7 @@ from sebex.config import current_repository_handles, current_project_handles
 
 
 @click.command()
-@click.option('--projects/--repos', help='List projects or repositories.')
+@click.option('--projects/--repos', default=True, help='List projects or repositories.')
 def ls(projects):
     """List repositories in current profile."""
 
