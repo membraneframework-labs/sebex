@@ -29,7 +29,7 @@ class DependentsGraph:
 
         def visit(pkg: str):
             for dep in self._graph[pkg].values():
-                result[dep.name].add(dep)
+                result[dep.defined_in].add(dep)
 
             if recursive:
                 for dep in self._graph[pkg].keys():
@@ -50,11 +50,11 @@ class DependentsGraph:
 
         visit(package, 0)
 
-        inverse = defaultdict(set)
+        inversion = defaultdict(set)
         for pkg, depth in sorted(depths.items(), key=lambda t: t[1]):
-            inverse[depth].add(pkg)
+            inversion[depth].add(pkg)
 
-        return list(inverse.values())
+        return list(inversion.values())
 
     def graphviz(self, db: AnalysisDatabase) -> Digraph:
         dot = Digraph()
@@ -73,10 +73,14 @@ class DependentsGraph:
     @classmethod
     def build(cls, db: AnalysisDatabase) -> 'DependentsGraph':
         with operation('Building dependency graph'):
-            return cls(cls._guard_cycle({
-                db.about(project).package: cls._collect_edges(project, db)
-                for project in db.projects()
-            }))
+            return cls(cls._invert(cls._guard_cycle(cls._build_graph(db))))
+
+    @classmethod
+    def _build_graph(cls, db):
+        return {
+            db.about(project).package: cls._collect_edges(project, db)
+            for project in db.projects()
+        }
 
     @classmethod
     def _collect_edges(cls, project: ProjectHandle, db: AnalysisDatabase) -> _Edges:
@@ -85,6 +89,16 @@ class DependentsGraph:
             for dep in db.about(project).dependencies
             if db.is_package_managed(dep.name)
         }
+
+    @classmethod
+    def _invert(cls, graph: _Graph) -> _Graph:
+        inversion = {pkg: {} for pkg in graph.keys()}
+
+        for edges in graph.values():
+            for dep in edges.values():
+                inversion[dep.name][dep.defined_in] = dep
+
+        return inversion
 
     @classmethod
     def _guard_cycle(cls, graph: _Graph) -> _Graph:

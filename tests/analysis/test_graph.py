@@ -59,9 +59,9 @@ def test_builds_simple():
     graph = DependentsGraph.build(db)
 
     assert len(graph) == 3
-    assert list(graph._graph['a'].keys()) == ['b', 'c']
-    assert list(graph._graph['b'].keys()) == ['c']
-    assert list(graph._graph['c'].keys()) == []
+    assert set(graph._graph['a'].keys()) == set()
+    assert set(graph._graph['b'].keys()) == {'a'}
+    assert set(graph._graph['c'].keys()) == {'a', 'b'}
 
 
 def test_build_detects_cycles():
@@ -116,26 +116,6 @@ STUPID_DB = MockAnalysisDatabase.mock({
         package='a',
         version=Version(1, 0, 0),
         version_span=SPAN,
-        dependencies=[
-            Dependency(
-                name='b',
-                defined_in='a',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=SPAN
-            ),
-            Dependency(
-                name='c',
-                defined_in='a',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=SPAN
-            ),
-            Dependency(
-                name='f',
-                defined_in='a',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
-                version_spec_span=SPAN
-            ),
-        ]
     )),
     ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
         package='b',
@@ -143,15 +123,15 @@ STUPID_DB = MockAnalysisDatabase.mock({
         version_span=SPAN,
         dependencies=[
             Dependency(
-                name='c',
+                name='a',
                 defined_in='b',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=SPAN
             ),
             Dependency(
-                name='d',
+                name='f',
                 defined_in='b',
-                version_spec=VersionSpec(VersionRequirement.parse('1.0')),
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
                 version_spec_span=SPAN
             )
         ]
@@ -160,11 +140,33 @@ STUPID_DB = MockAnalysisDatabase.mock({
         package='c',
         version=Version(1, 0, 0),
         version_span=SPAN,
+        dependencies=[
+            Dependency(
+                name='a',
+                defined_in='c',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                version_spec_span=SPAN
+            ),
+            Dependency(
+                name='b',
+                defined_in='c',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                version_spec_span=SPAN
+            )
+        ]
     )),
     ProjectHandle.parse('d'): (Language.ELIXIR, AnalysisEntry(
         package='d',
         version=Version(1, 0, 0),
         version_span=SPAN,
+        dependencies=[
+            Dependency(
+                name='b',
+                defined_in='d',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                version_spec_span=SPAN
+            )
+        ]
     )),
     ProjectHandle.parse('e:unused'): (Language.ELIXIR, AnalysisEntry(
         package='e',
@@ -177,7 +179,7 @@ STUPID_DB = MockAnalysisDatabase.mock({
         version_span=SPAN,
         dependencies=[
             Dependency(
-                name='b',
+                name='a',
                 defined_in='f',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
                 version_spec_span=SPAN
@@ -187,7 +189,7 @@ STUPID_DB = MockAnalysisDatabase.mock({
 })
 
 
-def test_dependents_on():
+def test_dependents_of():
     graph = DependentsGraph.build(STUPID_DB)
     # print(graph.graphviz(STUPID_DB).view(cleanup=True))
 
@@ -198,67 +200,75 @@ def test_dependents_on():
     assert graph.dependents_of_detailed('a') == {
         'b': {
             Dependency(
-                name='b',
-                defined_in='a',
+                name='a',
+                defined_in='b',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=SPAN
             ),
         },
-        'c': {Dependency(
-            name='c',
-            defined_in='a',
-            version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-            version_spec_span=SPAN
-        )},
-        'f': {Dependency(
-            name='f',
-            defined_in='a',
-            version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
-            version_spec_span=SPAN
-        )},
+        'c': {
+            Dependency(
+                name='a',
+                defined_in='c',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                version_spec_span=SPAN
+            )
+        },
+        'f': {
+            Dependency(
+                name='a',
+                defined_in='f',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
+                version_spec_span=SPAN
+            )
+        },
     }
 
     assert graph.dependents_of_detailed('a', recursive=True) == {
         'b': {
             Dependency(
-                name='b',
-                defined_in='a',
+                name='a',
+                defined_in='b',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=SPAN
             ),
             Dependency(
-                name='b',
-                defined_in='f',
+                name='f',
+                defined_in='b',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
                 version_spec_span=SPAN
             ),
         },
         'c': {
             Dependency(
-                name='c',
-                defined_in='a',
+                name='a',
+                defined_in='c',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=SPAN
             ),
             Dependency(
-                name='c',
-                defined_in='b',
+                name='b',
+                defined_in='c',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=SPAN
             )
         },
-        'd': {Dependency(
-            name='d',
-            defined_in='b',
-            version_spec=VersionSpec(VersionRequirement.parse('1.0')),
-            version_spec_span=SPAN
-        )},
-        'f': {Dependency(
-            name='f',
-            defined_in='a',
-            version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
-            version_spec_span=SPAN
-        )},
+        'd': {
+            Dependency(
+                name='b',
+                defined_in='d',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                version_spec_span=SPAN
+            )
+        },
+        'f': {
+            Dependency(
+                name='a',
+                defined_in='f',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
+                version_spec_span=SPAN
+            )
+        },
     }
 
 
