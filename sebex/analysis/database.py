@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, Iterable, Tuple
 
-from sebex.analysis.analyzer import AnalysisEntry, AnalysisError
-from sebex.analysis.language import Language
+from sebex.analysis.types import Language, AnalysisError, AnalysisEntry
 from sebex.config import ProjectHandle
 from sebex.jobs import for_each
+from sebex.languages import detect_language, language_support_for
 from sebex.log import operation
 
 _Projects = Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
@@ -53,8 +53,9 @@ class AnalysisDatabase:
     @staticmethod
     def _do_collect(project: ProjectHandle) -> Tuple[Language, AnalysisEntry]:
         with operation('Analyzing', project):
-            language = Language.detect(project)
-            entry = language.analyzer(project)
+            language = detect_language(project)
+            support = language_support_for(language)
+            entry = support.analyze(project)
             return language, entry
 
     @classmethod

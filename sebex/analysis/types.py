@@ -1,9 +1,16 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Callable, Optional, List
 
 from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
 from sebex.edit import Span
+
+
+class Language(Enum):
+    ELIXIR = 'elixir'
+    UNKNOWN = 'unknown'
 
 
 class AnalysisError(Exception):
@@ -44,4 +51,14 @@ class AnalysisEntry:
         return bool(self.releases)
 
 
-Analyzer = Callable[[ProjectHandle], AnalysisEntry]
+class LanguageSupport(ABC):
+    @classmethod
+    @abstractmethod
+    def language(cls) -> Language: ...
+
+    @classmethod
+    @abstractmethod
+    def test_project(cls, project: ProjectHandle) -> bool: ...
+
+    @abstractmethod
+    def analyze(self, project: ProjectHandle) -> AnalysisEntry: ...

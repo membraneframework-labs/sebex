@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Set
 
 from graphviz import Digraph
 
-from sebex.analysis.analyzer import Dependency
+from sebex.analysis.types import Dependency
 from sebex.analysis.database import AnalysisDatabase
 from sebex.config import ProjectHandle
 from sebex.log import operation

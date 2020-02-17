@@ -1,7 +1,7 @@
 import pytest
 
-from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, DependentsGraph
-from sebex.analysis.analyzer import AnalysisEntry, Dependency
+from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, DependentsGraph, \
+    AnalysisEntry, Dependency
 from sebex.config import ProjectHandle
 from sebex.edit import Span
 from .mock_database import MockAnalysisDatabase
