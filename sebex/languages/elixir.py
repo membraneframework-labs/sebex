@@ -4,13 +4,17 @@ from pathlib import Path
 
 from sebex.analysis.types import AnalysisEntry, Dependency, Release, Language, LanguageSupport
 from sebex.analysis.version import VersionSpec, Version
-from sebex.config import ProjectHandle
+from sebex.config import ProjectHandle, RepositoryHandle
 from sebex.context import Context
 from sebex.edit import Span
 
 
 def mix_file(project: ProjectHandle) -> Path:
     return project.location / 'mix.exs'
+
+
+def mix_lock(project: ProjectHandle) -> Path:
+    return project.location / 'mix.lock'
 
 
 class ElixirLanguageSupport(LanguageSupport):
@@ -34,8 +38,9 @@ class ElixirLanguageSupport(LanguageSupport):
         def load_dependency(dep):
             name = dep['name']
 
+            is_mix_lock_tracked = _is_tracked(mix_lock(project), project.repo)
             raw_version_lock = dep['version_lock']
-            if raw_version_lock is not None:
+            if is_mix_lock_tracked and raw_version_lock is not None:
                 version_lock = Version.parse(raw_version_lock)
             else:
                 version_lock = None
@@ -64,3 +69,12 @@ class ElixirLanguageSupport(LanguageSupport):
 
         return AnalysisEntry(package=package, version=version, version_span=version_span,
                              dependencies=dependencies, releases=releases)
+
+
+def _is_tracked(file: Path, repo: RepositoryHandle):
+    file = file.resolve()
+    for line in repo.git.git.ls_files().split('\n'):
+        path = Path(line).resolve()
+        if file == path:
+            return True
+    return False
