@@ -113,7 +113,7 @@ def test_dependents_of(stupid_db):
     # print(graph.graphviz(STUPID_DB).view(cleanup=True))
 
     assert graph.dependents_of('a') == {'b', 'c', 'f'}
-    assert graph.dependents_of('a', recursive=True) == {'b', 'c', 'd', 'f'}
+    assert graph.dependents_of('a', recursive=True) == {'b', 'c', 'd', 'f', 'g'}
     assert graph.dependents_of('e', recursive=True) == set()
 
     assert graph.dependents_of_detailed('a') == {
@@ -188,6 +188,14 @@ def test_dependents_of(stupid_db):
                 version_spec_span=Span.ZERO
             )
         },
+        'g': {
+            Dependency(
+                name='f',
+                defined_in='g',
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1.1')),
+                version_spec_span=Span.ZERO
+            )
+        },
     }
 
 
@@ -198,5 +206,5 @@ def test_upgrade_phases(stupid_db):
     assert graph.upgrade_phases('d') == [{'d'}]
     assert graph.upgrade_phases('c') == [{'c'}]
     assert graph.upgrade_phases('b') == [{'b'}, {'c', 'd'}]
-    assert graph.upgrade_phases('f') == [{'f'}, {'b'}, {'c', 'd'}]
-    assert graph.upgrade_phases('a') == [{'a'}, {'f'}, {'b'}, {'c', 'd'}]
+    assert graph.upgrade_phases('f') == [{'f'}, {'b', 'g'}, {'c', 'd'}]
+    assert graph.upgrade_phases('a') == [{'a'}, {'f'}, {'b', 'g'}, {'c', 'd'}]

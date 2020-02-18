@@ -84,4 +84,17 @@ def stupid_db():
                 ),
             ],
         )),
+        ProjectHandle.parse('g'): (Language.ELIXIR, AnalysisEntry(
+            package='g',
+            version=Version(1, 0, 0),
+            version_span=Span.ZERO,
+            dependencies=[
+                Dependency(
+                    name='f',
+                    defined_in='g',
+                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.1.1')),
+                    version_spec_span=Span.ZERO
+                ),
+            ],
+        )),
     })
