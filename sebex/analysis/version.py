@@ -34,13 +34,36 @@ class Pin(IntEnum):
     MAJOR = 1
     MINOR = 0
 
+    def truncate(self, version: Version) -> Version:
+        if self == self.MAJOR:
+            return Version(major=version.major, minor=version.minor, patch=0,
+                           prerelease=version.prerelease, build=version.build)
+        elif self == self.MINOR:
+            return version
+        else:
+            assert False, 'unreachable'
+
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
 
 
 _SHORT_REGEX = re.compile(
-    r'^(?P<major>(?:0|[1-9][0-9]*))\.(?P<minor>(?:0|[1-9][0-9]*))$',
-    re.VERBOSE
+    r"""
+        ^
+        (?P<major>0|[1-9]\d*)
+        \.
+        (?P<minor>0|[1-9]\d*)
+        (?:-(?P<prerelease>
+            (?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)
+            (?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*
+        ))?
+        (?:\+(?P<build>
+            [0-9a-zA-Z-]+
+            (?:\.[0-9a-zA-Z-]+)*
+        ))?
+        $
+        """,
+    re.VERBOSE,
 )
 
 
@@ -52,6 +75,40 @@ class VersionRequirement:
     operator: VersionOperator
     base: Version
     pin: Pin
+
+    def match(self, version: Version) -> bool:
+        pinned_base = self.pin.truncate(self.base)
+        pinned_version = self.pin.truncate(version)
+
+        # The requirement will not match a pre-release version
+        # unless the operand is a pre-release version.
+        if pinned_version.prerelease is not None or pinned_version.build is not None:
+            if pinned_base.prerelease is None and pinned_base.build is None:
+                return False
+
+        if self.operator == '==':
+            return pinned_version == pinned_base
+        elif self.operator == '!=':
+            return pinned_version != pinned_base
+        elif self.operator == '>':
+            return pinned_version > pinned_base
+        elif self.operator == '<':
+            return pinned_version < pinned_base
+        elif self.operator == '>=':
+            return pinned_version >= pinned_base
+        elif self.operator == '<=':
+            return pinned_version <= pinned_base
+        elif self.operator == '~>':
+            if self.pin == Pin.MAJOR:
+                next_incompatible = pinned_base.bump_major()
+            elif self.pin == Pin.MINOR:
+                next_incompatible = pinned_base.bump_minor()
+            else:
+                assert False, 'unreachable'
+
+            return pinned_base <= pinned_version < next_incompatible
+        else:
+            assert False, 'unreachable'
 
     @classmethod
     def parse(cls, req_str: str) -> 'VersionRequirement':
@@ -75,7 +132,13 @@ class VersionRequirement:
     def _parse_base(cls, base_str: str) -> Tuple[Version, Pin]:
         match = _SHORT_REGEX.match(base_str)
         if match:
-            return Version(int(match['major']), int(match['minor']), 0), Pin.MAJOR
+            return Version(
+                major=int(match['major']),
+                minor=int(match['minor']),
+                patch=0,
+                prerelease=match['prerelease'],
+                build=match['build'],
+            ), Pin.MAJOR
 
         return Version.parse(base_str), Pin.MINOR
 
