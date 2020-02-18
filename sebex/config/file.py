@@ -22,13 +22,14 @@ class ConfigFile:
         return JsonFormat
 
     @classmethod
+    def exists(cls, name: str = None) -> bool:
+        name = cls._get_name(name)
+        full_path = cls.format().full_path(name)
+        return full_path.exists()
+
+    @classmethod
     def open(cls: Type[K], name: str = None) -> 'K':
-        if name is None:
-            name = cls._name
-
-        if name is None:
-            raise Exception('Unknown config file name')
-
+        name = cls._get_name(name)
         full_path = cls.format().full_path(name)
 
         if full_path.exists():
@@ -49,6 +50,16 @@ class ConfigFile:
             yield self
         finally:
             self.save()
+
+    @classmethod
+    def _get_name(cls, name):
+        if name is None:
+            name = cls._name
+
+        if name is None:
+            raise ValueError('Unknown config file name')
+
+        return name
 
 
 def merge_defaults(base, defaults):
