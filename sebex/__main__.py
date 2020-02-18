@@ -7,6 +7,7 @@ from . import __version__
 from .cmd.bootstrap import bootstrap
 from .cmd.graph import graph
 from .cmd.ls import ls
+from .cmd.release import release
 from .cmd.sync import sync
 from .context import Context
 from .log import FatalError
@@ -35,6 +36,7 @@ def cli(**kwargs):
 cli.add_command(bootstrap)
 cli.add_command(graph)
 cli.add_command(ls)
+cli.add_command(release)
 cli.add_command(sync)
 
 if __name__ == '__main__':
