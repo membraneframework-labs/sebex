@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, ClassVar
 
 
 @dataclass(order=True, frozen=True)
@@ -8,6 +8,8 @@ class Span:
     start_column: int
     end_line: int
     end_column: int
+
+    ZERO: ClassVar['Span']
 
     def to_raw(self) -> Dict:
         return {
@@ -28,3 +30,6 @@ class Span:
 
     def __str__(self):
         return f'{self.start_line}:{self.start_column} - {self.end_line}:{self.end_column}'
+
+
+Span.ZERO = Span(0, 0, 0, 0)
