@@ -8,6 +8,49 @@ from sebex.edit import Span
 
 
 @pytest.fixture
+def triangle_db():
+    return MockAnalysisDatabase.mock({
+        ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(
+            package='a',
+            version=Version(1, 0, 0),
+            version_span=Span.ZERO,
+            dependencies=[
+                Dependency(
+                    name='b',
+                    defined_in='a',
+                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                    version_spec_span=Span.ZERO
+                ),
+                Dependency(
+                    name='c',
+                    defined_in='a',
+                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                    version_spec_span=Span.ZERO
+                )
+            ]
+        )),
+        ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
+            package='b',
+            version=Version(1, 0, 0),
+            version_span=Span.ZERO,
+            dependencies=[
+                Dependency(
+                    name='c',
+                    defined_in='b',
+                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
+                    version_spec_span=Span.ZERO
+                )
+            ]
+        )),
+        ProjectHandle.parse('c'): (Language.ELIXIR, AnalysisEntry(
+            package='c',
+            version=Version(1, 0, 0),
+            version_span=Span.ZERO,
+        ))
+    })
+
+
+@pytest.fixture
 def stupid_db():
     return MockAnalysisDatabase.mock({
         ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(

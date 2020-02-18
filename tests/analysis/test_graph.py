@@ -6,54 +6,15 @@ from sebex.config import ProjectHandle
 from sebex.edit import Span
 from .mock_database import MockAnalysisDatabase
 
+
 def test_builds_empty_database():
     db = MockAnalysisDatabase.mock({})
     graph = DependentsGraph.build(db)
     assert len(graph) == 0
 
 
-def test_builds_simple():
-    db = MockAnalysisDatabase.mock({
-        ProjectHandle.parse('a'): (Language.ELIXIR, AnalysisEntry(
-            package='a',
-            version=Version(1, 0, 0),
-            version_span=Span.ZERO,
-            dependencies=[
-                Dependency(
-                    name='b',
-                    defined_in='a',
-                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                    version_spec_span=Span.ZERO
-                ),
-                Dependency(
-                    name='c',
-                    defined_in='a',
-                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                    version_spec_span=Span.ZERO
-                )
-            ]
-        )),
-        ProjectHandle.parse('b'): (Language.ELIXIR, AnalysisEntry(
-            package='b',
-            version=Version(1, 0, 0),
-            version_span=Span.ZERO,
-            dependencies=[
-                Dependency(
-                    name='c',
-                    defined_in='b',
-                    version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                    version_spec_span=Span.ZERO
-                )
-            ]
-        )),
-        ProjectHandle.parse('c'): (Language.ELIXIR, AnalysisEntry(
-            package='c',
-            version=Version(1, 0, 0),
-            version_span=Span.ZERO,
-        ))
-    })
-
-    graph = DependentsGraph.build(db)
+def test_builds_triangle(triangle_db):
+    graph = DependentsGraph.build(triangle_db)
 
     assert len(graph) == 3
     assert set(graph._graph['a'].keys()) == set()
