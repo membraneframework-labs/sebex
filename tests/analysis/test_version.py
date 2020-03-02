@@ -1,6 +1,6 @@
 import pytest
 
-from sebex.analysis import VersionRequirement, Version
+from sebex.analysis import VersionRequirement, Version, VersionSpec
 
 
 @pytest.mark.parametrize('requirement_str, version_str, expected', [
@@ -38,3 +38,22 @@ def test_version_requirement_match(requirement_str, version_str, expected):
     requirement = VersionRequirement.parse(requirement_str)
     version = Version.parse(version_str)
     assert requirement.match(version) == expected
+
+
+@pytest.mark.parametrize('target_version_str, expected_requirement_str', [
+    ('1.0.0', '~> 1.0'),
+    ('1.1.0', '~> 1.1'),
+    ('1.0.1', '~> 1.0.1'),
+    ('1.1.1', '~> 1.1.1'),
+    ('0.1.0', '~> 0.1.0'),
+    ('0.1.1', '~> 0.1.1'),
+    ('0.0.0', '~> 0.0.0'),
+    ('0.0.1', '~> 0.0.1'),
+    ('1.0.0-dev', '==1.0.0-dev'),
+    ('0.1.0-dev', '==0.1.0-dev'),
+])
+def test_version_spec_targeting(target_version_str, expected_requirement_str):
+    target_version = Version.parse(target_version_str)
+    expected_requirement = VersionRequirement.parse(expected_requirement_str)
+    expected_spec = VersionSpec(expected_requirement)
+    assert VersionSpec.targeting(target_version) == expected_spec

@@ -218,3 +218,22 @@ class VersionSpec:
                 return cls(GitRequirement.from_dict(raw))
 
         raise ValueError(f'Unable to parse version spec: {raw!r}')
+
+    @classmethod
+    def targeting(cls, version: Version) -> 'VersionSpec':
+        if version.prerelease or version.build:
+            operator = VersionOperator('==')
+            pin = Pin.MINOR
+        else:
+            operator = VersionOperator('~>')
+
+            if version.major > 0 and version.patch == 0:
+                pin = Pin.MAJOR
+            else:
+                pin = Pin.MINOR
+
+        return cls(VersionRequirement(
+            operator=operator,
+            base=version,
+            pin=pin,
+        ))
