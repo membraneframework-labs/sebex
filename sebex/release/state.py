@@ -33,7 +33,10 @@ class ReleaseState:
             else:
                 # We are making a brand-new release
                 phases = graph.upgrade_phases(about_project.package)
-                phases = ((db.get_project_by_package(pkg) for pkg in phase) for phase in phases)
+                phases = (
+                    (db.get_project_by_package(pkg) for pkg in sorted(phase))
+                    for phase in phases
+                )
                 phases = [PhaseState.clean(projs, db) for projs in phases]
                 assert len(phases) > 0
 

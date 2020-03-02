@@ -4,7 +4,7 @@ from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, D
     AnalysisEntry, Dependency
 from sebex.config import ProjectHandle
 from sebex.edit import Span
-from .mock_database import MockAnalysisDatabase
+from .mock_database import MockAnalysisDatabase, triangle_db, stupid_db
 
 
 def test_builds_empty_database():
@@ -13,8 +13,8 @@ def test_builds_empty_database():
     assert len(graph) == 0
 
 
-def test_builds_triangle(triangle_db):
-    graph = DependentsGraph.build(triangle_db)
+def test_builds_triangle():
+    graph = DependentsGraph.build(triangle_db())
 
     assert len(graph) == 3
     assert set(graph._graph['a'].keys()) == set()
@@ -69,8 +69,8 @@ def test_build_detects_cycles():
         DependentsGraph.build(db)
 
 
-def test_dependents_of(stupid_db):
-    graph = DependentsGraph.build(stupid_db)
+def test_dependents_of():
+    graph = DependentsGraph.build(stupid_db())
     # print(graph.graphviz(STUPID_DB).view(cleanup=True))
 
     assert graph.dependents_of('a') == {'b', 'c', 'f'}
@@ -98,7 +98,7 @@ def test_dependents_of(stupid_db):
             Dependency(
                 name='a',
                 defined_in='f',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=Span.ZERO
             )
         },
@@ -115,7 +115,7 @@ def test_dependents_of(stupid_db):
             Dependency(
                 name='f',
                 defined_in='b',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=Span.ZERO
             ),
         },
@@ -145,7 +145,7 @@ def test_dependents_of(stupid_db):
             Dependency(
                 name='a',
                 defined_in='f',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1')),
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=Span.ZERO
             )
         },
@@ -153,15 +153,15 @@ def test_dependents_of(stupid_db):
             Dependency(
                 name='f',
                 defined_in='g',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.1.1')),
+                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=Span.ZERO
             )
         },
     }
 
 
-def test_upgrade_phases(stupid_db):
-    graph = DependentsGraph.build(stupid_db)
+def test_upgrade_phases():
+    graph = DependentsGraph.build(stupid_db())
 
     assert graph.upgrade_phases('e') == [{'e'}]
     assert graph.upgrade_phases('d') == [{'d'}]
