@@ -16,7 +16,7 @@ def test_new_no_release(mock_codename):
     db = chain_db(1)
     graph = DependentsGraph.build(db)
     project = ProjectHandle.parse('a0')
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=project,
         to_version=db.about(project).version,
         db=db,
@@ -28,7 +28,7 @@ def test_new_no_release(mock_codename):
 def test_release_stable_patch_without_deps(mock_codename):
     db = chain_db(1)
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('1.0.1'),
         db=db,
@@ -48,7 +48,7 @@ def test_release_stable_patch_without_deps(mock_codename):
 def test_release_stable_minor_without_deps(mock_codename):
     db = chain_db(1)
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('1.1.0'),
         db=db,
@@ -68,7 +68,7 @@ def test_release_stable_minor_without_deps(mock_codename):
 def test_release_stable_major_without_deps(mock_codename):
     db = chain_db(1)
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('2.0.0'),
         db=db,
@@ -88,7 +88,7 @@ def test_release_stable_major_without_deps(mock_codename):
 def test_release_stable_patch_with_one_level_of_deps(mock_codename):
     db = chain_db()
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('1.0.1'),
         db=db,
@@ -115,7 +115,7 @@ def test_release_stable_patch_with_one_level_of_deps(mock_codename):
 def test_release_stable_minor_with_one_level_of_deps(mock_codename):
     db = chain_db()
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('1.1.0'),
         db=db,
@@ -142,7 +142,7 @@ def test_release_stable_minor_with_one_level_of_deps(mock_codename):
 def test_release_stable_major_with_one_level_of_deps(mock_codename):
     db = chain_db()
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('2.0.0'),
         db=db,
@@ -169,7 +169,7 @@ def test_release_stable_major_with_one_level_of_deps(mock_codename):
 def test_release_pre_patch(mock_codename):
     db = chain_db(width=2, versions={'a0': '0.1.0', 'b0': '1.0.0', 'b1': '0.1.0'})
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('0.1.1'),
         db=db,
@@ -201,7 +201,7 @@ def test_release_pre_patch(mock_codename):
 def test_release_pre_minor(mock_codename):
     db = chain_db(width=2, versions={'a0': '0.1.0', 'b0': '1.0.0', 'b1': '0.1.0'})
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('a0'),
         to_version=Version.parse('0.2.0'),
         db=db,
@@ -233,7 +233,7 @@ def test_release_pre_minor(mock_codename):
 def test_transitive_dep(mock_codename):
     db = triangle_db()
     graph = DependentsGraph.build(db)
-    rel = ReleaseState.new(
+    rel = ReleaseState.plan(
         project=ProjectHandle.parse('c'),
         to_version=Version.parse('2.0.0'),
         db=db,

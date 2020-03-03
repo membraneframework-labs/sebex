@@ -18,8 +18,8 @@ class ReleaseState:
     codename: str = field(default_factory=_new_codename)
 
     @classmethod
-    def new(cls, project: ProjectHandle, to_version: Version, db: AnalysisDatabase,
-            graph: DependentsGraph) -> 'ReleaseState':
+    def plan(cls, project: ProjectHandle, to_version: Version,
+             db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
         with operation('Constructing release plan'):
             about_project = db.about(project)
             from_version = about_project.version

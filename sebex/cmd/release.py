@@ -26,7 +26,7 @@ def plan(project: ProjectHandle, version: Version, noop: bool):
     """
 
     database, graph = analyze()
-    rel = ReleaseState.new(project, version, database, graph)
+    rel = ReleaseState.plan(project, version, database, graph)
     print('------')
     print(rel)
 
