@@ -1,21 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Iterator, Collection, Iterable
-
-import petname
 
 from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
 from sebex.config import ProjectHandle
 from sebex.log import operation
 
 
-def _new_codename() -> str:
-    return petname.generate(3, ' ').title()
-
-
 @dataclass
 class ReleaseState:
     phases: List['PhaseState']
-    codename: str = field(default_factory=_new_codename)
 
     @classmethod
     def plan(cls, project: ProjectHandle, to_version: Version,
@@ -48,7 +41,6 @@ class ReleaseState:
 @dataclass
 class PhaseState(Collection['ProjectReleaseState']):
     _items: List['ProjectReleaseState']
-    codename: str = field(default_factory=_new_codename)
 
     def __len__(self) -> int:
         return len(self._items)

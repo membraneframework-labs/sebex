@@ -1,18 +1,17 @@
-import petname
-import pytest
-
 from analysis.mock_database import chain_db, triangle_db
 from sebex.analysis import DependentsGraph, Version
+from sebex.checksum import Checksum
 from sebex.config import ProjectHandle
 from sebex.release import ReleaseState, PhaseState, ProjectReleaseState
 
 
-@pytest.fixture
-def mock_codename(monkeypatch):
-    monkeypatch.setattr(petname, 'generate', lambda _, sep: f'code{sep}name')
+def test_petname_deterministic():
+    db = chain_db(1)
+    assert Checksum.of(db) == Checksum('feccf1c633f39b97d339786c864c9eb079ef4c20')
+    assert Checksum.of(db).petname == 'Duly Up Pup'
 
 
-def test_new_no_release(mock_codename):
+def test_new_no_release():
     db = chain_db(1)
     graph = DependentsGraph.build(db)
     project = ProjectHandle.parse('a0')
@@ -25,7 +24,7 @@ def test_new_no_release(mock_codename):
     assert rel == ReleaseState([])
 
 
-def test_release_stable_patch_without_deps(mock_codename):
+def test_release_stable_patch_without_deps():
     db = chain_db(1)
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -45,7 +44,7 @@ def test_release_stable_patch_without_deps(mock_codename):
     ])
 
 
-def test_release_stable_minor_without_deps(mock_codename):
+def test_release_stable_minor_without_deps():
     db = chain_db(1)
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -65,7 +64,7 @@ def test_release_stable_minor_without_deps(mock_codename):
     ])
 
 
-def test_release_stable_major_without_deps(mock_codename):
+def test_release_stable_major_without_deps():
     db = chain_db(1)
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -85,7 +84,7 @@ def test_release_stable_major_without_deps(mock_codename):
     ])
 
 
-def test_release_stable_patch_with_one_level_of_deps(mock_codename):
+def test_release_stable_patch_with_one_level_of_deps():
     db = chain_db()
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -112,7 +111,7 @@ def test_release_stable_patch_with_one_level_of_deps(mock_codename):
     ])
 
 
-def test_release_stable_minor_with_one_level_of_deps(mock_codename):
+def test_release_stable_minor_with_one_level_of_deps():
     db = chain_db()
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -139,7 +138,7 @@ def test_release_stable_minor_with_one_level_of_deps(mock_codename):
     ])
 
 
-def test_release_stable_major_with_one_level_of_deps(mock_codename):
+def test_release_stable_major_with_one_level_of_deps():
     db = chain_db()
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -166,7 +165,7 @@ def test_release_stable_major_with_one_level_of_deps(mock_codename):
     ])
 
 
-def test_release_pre_patch(mock_codename):
+def test_release_pre_patch():
     db = chain_db(width=2, versions={'a0': '0.1.0', 'b0': '1.0.0', 'b1': '0.1.0'})
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -198,7 +197,7 @@ def test_release_pre_patch(mock_codename):
     ])
 
 
-def test_release_pre_minor(mock_codename):
+def test_release_pre_minor():
     db = chain_db(width=2, versions={'a0': '0.1.0', 'b0': '1.0.0', 'b1': '0.1.0'})
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
@@ -230,7 +229,7 @@ def test_release_pre_minor(mock_codename):
     ])
 
 
-def test_transitive_dep(mock_codename):
+def test_transitive_dep():
     db = triangle_db()
     graph = DependentsGraph.build(db)
     rel = ReleaseState.plan(
