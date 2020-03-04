@@ -39,24 +39,27 @@ class Checksum:
     def of(cls, o: Any) -> 'Checksum':
         m = hashlib.sha1()
 
-        if isinstance(o, Checksumable):
-            o.checksum(m.update)
-        elif isinstance(o, dict):
-            for k, v in o:
-                m.update(cls.of(k))
-                m.update(cls.of(v))
-        elif is_iterable(o):
-            for e in o:
-                m.update(cls.of(e))
-        else:
-            m.update(bytes(repr(o), 'utf-8'))
+        def visit(x):
+            if isinstance(x, Checksumable):
+                x.checksum(visit)
+            elif isinstance(x, dict):
+                for k, v in x:
+                    visit(k)
+                    visit(v)
+            elif is_iterable(x):
+                for e in x:
+                    visit(e)
+            else:
+                m.update(bytes(repr(x), 'utf-8'))
+
+        visit(o)
 
         return cls(m.hexdigest())
 
 
 class Checksumable(ABC):
     @abstractmethod
-    def checksum(self, hasher: Callable[[bytes], None]) -> None: ...
+    def checksum(self, hasher: Callable[[Any], None]) -> None: ...
 
 
 def is_iterable(obj) -> bool:

@@ -1,9 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Iterator, Collection, Iterable
+from textwrap import indent, dedent
 
-from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
+from sebex.analysis import Version, VersionSpec, AnalysisDatabase, DependentsGraph
 from sebex.analysis.version import Bump, UnsolvableBump
+from sebex.checksum import Checksum
 from sebex.config import ProjectHandle
 from sebex.log import operation, error
 
@@ -11,6 +13,16 @@ from sebex.log import operation, error
 @dataclass
 class ReleaseState:
     phases: List['PhaseState']
+
+    def describe(self) -> str:
+        codename = Checksum.of(self).petname
+        header = f'Release "{codename}"'
+        txt = f'{header}\n{"=" * len(header)}\n\n'
+
+        for i, phase in enumerate(self.phases, start=1):
+            txt += f'{i}. {phase.describe()}'
+
+        return txt
 
     @classmethod
     def plan(cls, project: ProjectHandle, to_version: Version,
@@ -95,6 +107,17 @@ class PhaseState(Collection['ProjectReleaseState']):
 
         raise KeyError(f'This phase does not include project {project}')
 
+    def describe(self) -> str:
+        codename = Checksum.of(self).petname
+        header = f'Phase "{codename}"'
+        txt = f'{header}\n'
+
+        for proj in sorted(self._items, key=lambda p: p.project):
+            descr = '  * ' + indent(proj.describe(), '    ')[4:]
+            txt += f'{descr}\n'
+
+        return txt
+
     @classmethod
     def clean(cls, projects: Iterable[ProjectHandle], db: AnalysisDatabase) -> 'PhaseState':
         return PhaseState([ProjectReleaseState.clean(proj, db) for proj in projects])
@@ -105,6 +128,13 @@ class ProjectReleaseState:
     project: ProjectHandle
     from_version: Version
     to_version: Version
+
+    def describe(self) -> str:
+        spec = VersionSpec.targeting(self.to_version)
+        return dedent(f'''\
+        {self.project}
+        {self.from_version} -> {self.to_version} ({spec})
+        ''')
 
     @classmethod
     def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectReleaseState':

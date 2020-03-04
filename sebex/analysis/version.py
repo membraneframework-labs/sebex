@@ -245,6 +245,12 @@ class VersionSpec:
             pin=pin,
         ))
 
+    def __str__(self):
+        if self.is_version:
+            return str(self.value)
+        else:
+            return repr(self.value)
+
 
 class UnsolvableBump(Exception):
     pass
