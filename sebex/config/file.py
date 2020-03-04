@@ -15,7 +15,13 @@ class ConfigFile:
         if name is not None:
             self._name = name
 
+        self._load_data(data)
+
+    def _load_data(self, data):
         self._data = merge_defaults(data, self._data)
+
+    def _make_data(self):
+        return self._data
 
     @classmethod
     def format(cls) -> Type[Format]:
@@ -38,11 +44,11 @@ class ConfigFile:
         else:
             data = None
 
-        return cls(name, data)
+        return cls(name=name, data=data)
 
     def save(self) -> None:
         with open(self.format().full_path(self._name), 'w') as f:
-            self.format().dump(self._data, f)
+            self.format().dump(self._make_data(), f)
 
     @contextmanager
     def transaction(self: K):

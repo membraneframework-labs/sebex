@@ -3,7 +3,7 @@ import click
 from sebex.analysis import Version, analyze
 from sebex.cli import PROJECT, VERSION
 from sebex.config import ProjectHandle
-from sebex.log import success, log
+from sebex.log import success, log, fatal, operation
 from sebex.release.state import ReleaseState
 
 
@@ -35,11 +35,21 @@ def plan(project: ProjectHandle, version: Version, noop: bool):
     Prepare release plan for managed package.
     """
 
+    if not noop:
+        if ReleaseState.exists():
+            rel = ReleaseState.open()
+            fatal(f'Release "{rel.codename()}" is already running.',
+                  'Please finish it before creating new one.')
+
     database, graph = analyze()
     rel = ReleaseState.plan(project, version, database, graph)
 
     log()
     log(rel.describe())
+
+    if not noop:
+        with operation(f'Saving release "{rel.codename()}"'):
+            rel.save()
 
 
 @release.command(name='continue')

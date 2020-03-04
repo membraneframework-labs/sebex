@@ -21,7 +21,7 @@ def test_new_no_release():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([])
+    assert rel == ReleaseState(phases=[])
 
 
 def test_release_stable_patch_without_deps():
@@ -33,7 +33,7 @@ def test_release_stable_patch_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -53,7 +53,7 @@ def test_release_stable_minor_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -73,7 +73,7 @@ def test_release_stable_major_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -93,7 +93,7 @@ def test_release_stable_patch_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -120,7 +120,7 @@ def test_release_stable_minor_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -147,7 +147,7 @@ def test_release_stable_major_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -174,7 +174,7 @@ def test_release_pre_patch():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -206,7 +206,7 @@ def test_release_pre_minor():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
@@ -238,7 +238,7 @@ def test_transitive_dep():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState([
+    assert rel == ReleaseState(phases=[
         PhaseState([
             ProjectReleaseState(
                 project=ProjectHandle.parse('c'),

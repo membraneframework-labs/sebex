@@ -1,18 +1,39 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from textwrap import indent
-from typing import List, Iterator, Collection, Iterable
+from typing import List, Iterator, Collection, Iterable, Dict
+
 import click
+
 from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
 from sebex.analysis.version import Bump, UnsolvableBump
 from sebex.checksum import Checksum
-from sebex.config import ProjectHandle
+from sebex.config import ProjectHandle, ConfigFile
 from sebex.log import operation, error
 
 
 @dataclass
-class ReleaseState:
+class ReleaseState(ConfigFile):
+    _name = 'release'
+
     phases: List['PhaseState']
+
+    def __init__(self, name=None, data=None, phases=None):
+        self.phases = phases
+
+        super().__init__(name, data)
+
+    def _load_data(self, data):
+        if data is not None:
+            self.phases = [PhaseState.from_raw(p) for p in data['phases']]
+
+    def _make_data(self):
+        return {
+            'phases': [p.to_raw() for p in self.phases]
+        }
+
+    def codename(self) -> str:
+        return Checksum.of(self).petname
 
     def has_project(self, project: ProjectHandle) -> bool:
         for phase in self.phases:
@@ -29,8 +50,7 @@ class ReleaseState:
         raise KeyError(f'Project {project} is not part of this release.')
 
     def describe(self) -> str:
-        codename = Checksum.of(self).petname
-        header = f'Release "{codename}"'
+        header = f'Release "{self.codename()}"'
         txt = f'{header}\n{"=" * len(header)}\n\n'
 
         for i, phase in enumerate(self.phases, start=1):
@@ -120,6 +140,9 @@ class PhaseState(Collection['ProjectReleaseState']):
     def __contains__(self, item) -> bool:
         return item in self._items
 
+    def codename(self) -> str:
+        return Checksum.of(self).petname
+
     def has_project(self, project: ProjectHandle) -> bool:
         for prs in self._items:
             if prs.project == project:
@@ -135,8 +158,7 @@ class PhaseState(Collection['ProjectReleaseState']):
         raise KeyError(f'This phase does not include project {project}')
 
     def describe(self) -> str:
-        codename = Checksum.of(self).petname
-        header = f'Phase "{codename}"'
+        header = f'Phase "{self.codename()}"'
         txt = f'{header}\n'
 
         for proj in sorted(self._items, key=lambda p: p.project):
@@ -148,6 +170,15 @@ class PhaseState(Collection['ProjectReleaseState']):
     @classmethod
     def clean(cls, projects: Iterable[ProjectHandle], db: AnalysisDatabase) -> 'PhaseState':
         return PhaseState([ProjectReleaseState.clean(proj, db) for proj in projects])
+
+    def to_raw(self) -> Dict:
+        return {
+            'projects': [p.to_raw() for p in self._items],
+        }
+
+    @classmethod
+    def from_raw(cls, o: Dict) -> 'PhaseState':
+        return cls([ProjectReleaseState.from_raw(p) for p in o['projects']])
 
 
 @dataclass
@@ -172,6 +203,21 @@ class ProjectReleaseState:
             project=project,
             from_version=about.version,
             to_version=about.version
+        )
+
+    def to_raw(self) -> Dict:
+        return {
+            "project": str(self.project),
+            "from_version": str(self.from_version),
+            "to_version": str(self.to_version),
+        }
+
+    @classmethod
+    def from_raw(cls, o: Dict) -> 'ProjectReleaseState':
+        return cls(
+            project=ProjectHandle.parse(o['project']),
+            from_version=Version.parse(o['from_version']),
+            to_version=Version.parse(o['to_version']),
         )
 
 
