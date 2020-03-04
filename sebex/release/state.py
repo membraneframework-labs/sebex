@@ -14,6 +14,20 @@ from sebex.log import operation, error
 class ReleaseState:
     phases: List['PhaseState']
 
+    def has_project(self, project: ProjectHandle) -> bool:
+        for phase in self.phases:
+            if phase.has_project(project):
+                return True
+
+        return False
+
+    def get_project(self, project: ProjectHandle) -> 'ProjectReleaseState':
+        for phase in self.phases:
+            if phase.has_project(project):
+                return phase.get_project(project)
+
+        raise KeyError(f'Project {project} is not part of this release.')
+
     def describe(self) -> str:
         codename = Checksum.of(self).petname
         header = f'Release "{codename}"'
@@ -47,37 +61,50 @@ class ReleaseState:
                 phases = [PhaseState.clean(projs, db) for projs in phases]
                 assert len(phases) > 0
 
-                bumps = defaultdict(lambda: Bump.STAY_AS_IS)
+                rel = cls(phases=phases)
 
                 # Seed the release with initial project
-                phases[0].get_by_project(project).to_version = to_version
-                bumps[project] = Bump.between(from_version, to_version)
-                assert bumps[project] != Bump.STAY_AS_IS
+                rel.get_project(project).to_version = to_version
 
-                # Propagate version bumps down the phases, we are searching for
-                # maximum needed bump for each project
-                for phase in phases:
-                    for proj in phase:
-                        for dep_pkg in graph.dependents_of(db.about(proj.project).package):
-                            dep = db.get_project_by_package(dep_pkg)
-                            dep_bump = bumps[proj.project].derive(proj.from_version)
-                            bumps[dep] = max(bumps[dep], dep_bump)
+                rel._solve_bumps([project], db, graph)
+                return rel
 
-                # Verify that all bumps are possible
-                invalid_bumps = False
-                for project, bump in bumps.items():
-                    if bump == Bump.UNSOLVABLE:
-                        error('Unable to bump project', project)
-                        invalid_bumps = True
-                if invalid_bumps:
-                    raise UnsolvableBump()
+    def _solve_bumps(self, seeds: Collection[ProjectHandle],
+                     db: AnalysisDatabase, graph: DependentsGraph):
+        """
+        Propagate version bumps down the phases, we are searching for
+        maximum needed bump for each project.
 
-                # Apply found version bumps to projects
-                for phase in phases:
-                    for proj in phase:
-                        proj.to_version = bumps[proj.project].apply(proj.from_version)
+        :param seeds: A collection of projects that should not be bumped.
+        """
 
-                return cls(phases=phases)
+        bumps = defaultdict(lambda: Bump.STAY_AS_IS)
+
+        for handle in seeds:
+            project = self.get_project(handle)
+            bumps[handle] = Bump.between(project.from_version, project.to_version)
+            assert bumps[handle] != Bump.STAY_AS_IS
+
+        for phase in self.phases:
+            for proj in phase:
+                for dep_pkg in graph.dependents_of(db.about(proj.project).package):
+                    dep = db.get_project_by_package(dep_pkg)
+                    dep_bump = bumps[proj.project].derive(proj.from_version)
+                    bumps[dep] = max(bumps[dep], dep_bump)
+
+        # Verify that all bumps are possible
+        invalid_bumps = False
+        for project, bump in bumps.items():
+            if bump == Bump.UNSOLVABLE:
+                error('Unable to bump project', project)
+                invalid_bumps = True
+        if invalid_bumps:
+            raise UnsolvableBump()
+
+        # Apply found version bumps to projects
+        for phase in self.phases:
+            for proj in phase:
+                proj.to_version = bumps[proj.project].apply(proj.from_version)
 
 
 @dataclass
@@ -100,7 +127,7 @@ class PhaseState(Collection['ProjectReleaseState']):
 
         return False
 
-    def get_by_project(self, project: ProjectHandle) -> 'ProjectReleaseState':
+    def get_project(self, project: ProjectHandle) -> 'ProjectReleaseState':
         for prs in self._items:
             if prs.project == project:
                 return prs
