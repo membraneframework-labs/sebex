@@ -36,8 +36,7 @@ def operation(*msg):
     log(*msg, '...')
     try:
         yield None
+        log(*msg, click.style('OK', fg='green'))
     except:
         log(*msg, click.style('ERROR', fg='red'))
         raise
-    finally:
-        log(*msg, click.style('OK', fg='green'))
