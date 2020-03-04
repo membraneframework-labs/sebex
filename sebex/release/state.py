@@ -1,9 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from textwrap import indent
 from typing import List, Iterator, Collection, Iterable
-from textwrap import indent, dedent
-
-from sebex.analysis import Version, VersionSpec, AnalysisDatabase, DependentsGraph
+import click
+from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
 from sebex.analysis.version import Bump, UnsolvableBump
 from sebex.checksum import Checksum
 from sebex.config import ProjectHandle
@@ -156,12 +156,14 @@ class ProjectReleaseState:
     from_version: Version
     to_version: Version
 
+    @property
+    def bump(self) -> Bump:
+        return Bump.between(self.from_version, self.to_version)
+
     def describe(self) -> str:
-        spec = VersionSpec.targeting(self.to_version)
-        return dedent(f'''\
-        {self.project}
-        {self.from_version} -> {self.to_version} ({spec})
-        ''')
+        from_version = click.style(str(self.from_version), fg="cyan")
+        to_version = click.style(str(self.to_version), fg=_bump_color(self.bump))
+        return f'{self.project}, {from_version} -> {to_version}'
 
     @classmethod
     def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectReleaseState':
@@ -171,3 +173,14 @@ class ProjectReleaseState:
             from_version=about.version,
             to_version=about.version
         )
+
+
+def _bump_color(bump: Bump) -> str:
+    if bump in [Bump.STAY_AS_IS, Bump.PATCH]:
+        return 'cyan'
+    elif bump == Bump.MINOR:
+        return 'green'
+    elif bump == Bump.MAJOR:
+        return 'yellow'
+    else:
+        return 'red'
