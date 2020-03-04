@@ -43,13 +43,21 @@ class Pin(IntEnum):
         else:
             assert False, 'unreachable'
 
+    def reset(self, version: Version) -> Version:
+        if self == self.MAJOR:
+            return Version(major=version.major)
+        elif self == self.MINOR:
+            return Version(major=version.major, minor=version.minor)
+        else:
+            assert False, 'unreachable'
+
     @classmethod
     def best_for(cls, dependency_version: Version) -> 'Pin':
         """
         Returns best pin for dependency version requirement (e.g. `~> 1.0`).
         """
 
-        if dependency_version.major > 0 and dependency_version.patch == 0:
+        if dependency_version.major > 0:
             return cls.MAJOR
         else:
             return cls.MINOR
@@ -79,7 +87,7 @@ _SHORT_REGEX = re.compile(
 
 
 # TODO: Support `and` and `or` operators
-@dataclass(frozen=True)
+@dataclass(order=True, frozen=True)
 class VersionRequirement:
     __slots__ = ['operator', 'base', 'pin']
 
@@ -235,13 +243,15 @@ class VersionSpec:
         if version.prerelease or version.build:
             operator = VersionOperator('==')
             pin = Pin.MINOR
+            base = version
         else:
             operator = VersionOperator('~>')
             pin = Pin.best_for(version)
+            base = pin.reset(version)
 
         return cls(VersionRequirement(
             operator=operator,
-            base=version,
+            base=base,
             pin=pin,
         ))
 
