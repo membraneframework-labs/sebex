@@ -1,9 +1,11 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Iterator, Collection, Iterable
 
 from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
+from sebex.analysis.version import Bump, UnsolvableBump
 from sebex.config import ProjectHandle
-from sebex.log import operation
+from sebex.log import operation, error
 
 
 @dataclass
@@ -33,7 +35,35 @@ class ReleaseState:
                 phases = [PhaseState.clean(projs, db) for projs in phases]
                 assert len(phases) > 0
 
+                bumps = defaultdict(lambda: Bump.STAY_AS_IS)
+
+                # Seed the release with initial project
                 phases[0].get_by_project(project).to_version = to_version
+                bumps[project] = Bump.between(from_version, to_version)
+                assert bumps[project] != Bump.STAY_AS_IS
+
+                # Propagate version bumps down the phases, we are searching for
+                # maximum needed bump for each project
+                for phase in phases:
+                    for proj in phase:
+                        for dep_pkg in graph.dependents_of(db.about(proj.project).package):
+                            dep = db.get_project_by_package(dep_pkg)
+                            dep_bump = bumps[proj.project].derive(proj.from_version)
+                            bumps[dep] = max(bumps[dep], dep_bump)
+
+                # Verify that all bumps are possible
+                invalid_bumps = False
+                for project, bump in bumps.items():
+                    if bump == Bump.UNSOLVABLE:
+                        error('Unable to bump project', project)
+                        invalid_bumps = True
+                if invalid_bumps:
+                    raise UnsolvableBump()
+
+                # Apply found version bumps to projects
+                for phase in phases:
+                    for proj in phase:
+                        proj.to_version = bumps[proj.project].apply(proj.from_version)
 
                 return cls(phases=phases)
 

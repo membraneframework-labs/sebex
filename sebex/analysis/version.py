@@ -43,6 +43,17 @@ class Pin(IntEnum):
         else:
             assert False, 'unreachable'
 
+    @classmethod
+    def best_for(cls, dependency_version: Version) -> 'Pin':
+        """
+        Returns best pin for dependency version requirement (e.g. `~> 1.0`).
+        """
+
+        if dependency_version.major > 0 and dependency_version.patch == 0:
+            return cls.MAJOR
+        else:
+            return cls.MINOR
+
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
 
@@ -226,14 +237,125 @@ class VersionSpec:
             pin = Pin.MINOR
         else:
             operator = VersionOperator('~>')
-
-            if version.major > 0 and version.patch == 0:
-                pin = Pin.MAJOR
-            else:
-                pin = Pin.MINOR
+            pin = Pin.best_for(version)
 
         return cls(VersionRequirement(
             operator=operator,
             base=version,
             pin=pin,
         ))
+
+
+class UnsolvableBump(Exception):
+    pass
+
+
+class Bump(IntEnum):
+    """
+    Denotes at what degree should the version specification be bumped.
+
+    An ordering is defined, reflecting the degree of the change:
+
+    >>> Bump.STAY_AS_IS < Bump.PATCH < Bump.MINOR < Bump.MAJOR < Bump.UNSOLVABLE
+    True
+    """
+
+    # TODO Support prerelease & build bumps?
+
+    MAJOR = 3
+    MINOR = 2
+    PATCH = 1
+    STAY_AS_IS = 0
+    UNSOLVABLE = 10
+
+    def apply(self, version: Version) -> Version:
+        if self == self.UNSOLVABLE:
+            raise UnsolvableBump()
+        elif self == self.STAY_AS_IS:
+            return version
+        elif self == self.MAJOR:
+            return version.bump_major()
+        elif self == self.MINOR:
+            return version.bump_minor()
+        elif self == self.PATCH:
+            return version.bump_patch()
+        else:
+            assert False, 'unreachable'
+
+    def derive(self, dependency: Version) -> 'Bump':
+        """
+        Given libraries `A` and `B`, `B` having `A` as dependency. We are releasing `A`:
+
+        1. If we bump *patch* `A` (1.0.0 -> 1.0.1), then we bump *patch* `B` (1.0.0 -> 1.0.1)
+
+            >>> Bump.PATCH.derive(Version.parse('1.0.0'))
+            <Bump.PATCH>
+
+        2. If we bump *minor* `A` (1.0.0 -> 1.1.0), then we bump *patch* `B` (1.0.0 -> 1.0.1)
+
+            >>> Bump.MINOR.derive(Version.parse('1.0.0'))
+            <Bump.PATCH>
+
+        3. If we bump *major* `A` (1.0.0 -> 2.0.0), then we bump *minor* `B` (1.0.0 -> 1.1.0)
+
+            >>> Bump.MAJOR.derive(Version.parse('1.0.0'))
+            <Bump.MINOR>
+
+        4. If we bump *patch* `A` <1.0 (0.1.0 -> 0.1.1), then we bump *patch* `B` (1.0.0 -> 1.0.1)
+
+            >>> Bump.PATCH.derive(Version.parse('0.1.0'))
+            <Bump.PATCH>
+
+        5. If we bump *minor* `A` <1.0 (0.1.0 -> 0.2.0), then we bump *minor* `B` (1.0.0 -> 1.1.0)
+
+            >>> Bump.MINOR.derive(Version.parse('0.1.0'))
+            <Bump.MINOR>
+
+        6. `STAY_AS_IS` and `UNSOLVABLE` always return themselves
+
+            >>> Bump.STAY_AS_IS.derive(Version.parse('1.0.0'))
+            <Bump.STAY_AS_IS>
+            >>> Bump.UNSOLVABLE.derive(Version.parse('1.0.0'))
+            <Bump.UNSOLVABLE>
+
+
+        :param dependency: Version of library `A` before bumping.
+        :return: Bump value for library `B`.
+        """
+
+        if self in [self.UNSOLVABLE, self.STAY_AS_IS]:
+            return self
+        elif dependency.major == 0:
+            if self == self.PATCH:
+                return self.PATCH
+            elif self == self.MINOR:
+                return self.MINOR
+        else:
+            if self == self.PATCH:
+                return self.PATCH
+            elif self == self.MINOR:
+                return self.PATCH
+            elif self == self.MAJOR:
+                return self.MINOR
+
+        assert False, 'unreachable'
+
+    @classmethod
+    def between(cls, fr: Version, to: Version) -> 'Bump':
+        if fr > to:
+            return cls.UNSOLVABLE
+        elif fr.prerelease is not None or fr.build is not None:
+            return cls.UNSOLVABLE
+        elif to.prerelease is not None or to.build is not None:
+            return cls.UNSOLVABLE
+        elif fr == to:
+            return cls.STAY_AS_IS
+        elif fr.major < to.major:
+            return cls.MAJOR
+        elif fr.minor < to.minor:
+            return cls.MINOR
+        else:
+            return cls.PATCH
+
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)

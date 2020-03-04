@@ -211,7 +211,7 @@ def test_release_pre_minor():
             ProjectReleaseState(
                 project=ProjectHandle.parse('a0'),
                 from_version=Version.parse('0.1.0'),
-                to_version=Version.parse('0.1.1'),
+                to_version=Version.parse('0.2.0'),
             )
         ]),
         PhaseState([
