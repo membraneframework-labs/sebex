@@ -61,10 +61,11 @@ class ReleaseState(ConfigFile):
 
     def describe(self) -> str:
         header = f'Release "{self.codename()}"'
-        txt = f'{click.style(header, fg="magenta")}\n{click.style("=" * len(header), fg="magenta")}\n\n'
+        txt = f'{click.style(header, fg="magenta")}\n' \
+              f'{click.style("=" * len(header), fg="magenta")}\n\n'
 
         for i, phase in enumerate(self.phases, start=1):
-            txt += f'{i}. {phase.describe()}'
+            txt += f'{i}. {phase.describe(self)}'
 
         return txt
 
@@ -169,12 +170,12 @@ class PhaseState(Collection['ProjectReleaseState']):
 
         raise KeyError(f'This phase does not include project {project}')
 
-    def describe(self) -> str:
+    def describe(self, release: ReleaseState) -> str:
         header = f'Phase "{self.codename()}"'
         txt = f'{header}\n'
 
         for proj in sorted(self._items, key=lambda p: p.project):
-            descr = '  * ' + indent(proj.describe(), '    ')[4:]
+            descr = '  * ' + indent(proj.describe(release), '    ')[4:]
             txt += f'{descr}\n'
 
         return txt
@@ -203,10 +204,16 @@ class ProjectReleaseState:
     def bump(self) -> Bump:
         return Bump.between(self.from_version, self.to_version)
 
-    def describe(self) -> str:
+    def describe(self, release: ReleaseState) -> str:
+        project_name = str(self.project)
+
+        if self.project in release.sources:
+            project_name = click.style(project_name, bold=True)
+
         from_version = click.style(str(self.from_version), fg="cyan")
         to_version = click.style(str(self.to_version), fg=_bump_color(self.bump))
-        return f'{self.project}, {from_version} -> {to_version}'
+
+        return f'{project_name}, {from_version} -> {to_version}'
 
     @classmethod
     def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectReleaseState':
