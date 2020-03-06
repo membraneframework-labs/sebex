@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Dict, Union, Iterable, Type, List, Optional
+from typing import NamedTuple, Dict, Union, Iterable, List, Optional
 
 from git import Repo as GitRepo
 from github import Repository as GithubRepository
 
 from sebex.config.file import ConfigFile
-from sebex.config.format import Format, YamlFormat
 from sebex.context import Context
 
 
@@ -156,10 +155,6 @@ class Manifest(ConfigFile):
         super().__init__(name, data)
 
         self._repository_index = {r['name']: i for i, r in enumerate(self._data['repositories'])}
-
-    @classmethod
-    def format(cls) -> Type[Format]:
-        return YamlFormat
 
     def get_repository_by_name(self, name: Union[str, RepositoryHandle]) -> RepositoryManifest:
         repo = self.find_repository_by_name(name)

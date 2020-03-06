@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import Type, TypeVar, Optional
 
-from sebex.config.format import Format, JsonFormat
+from sebex.config.format import Format, YamlFormat
 
 K = TypeVar('K', bound='ConfigFile')
 
@@ -24,8 +24,8 @@ class ConfigFile:
         return self._data
 
     @classmethod
-    def format(cls) -> Type[Format]:
-        return JsonFormat
+    def format(cls) -> Format:
+        return YamlFormat()
 
     @classmethod
     def exists(cls, name: str = None) -> bool:

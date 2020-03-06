@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Type, Optional
+from typing import Iterable, List, Optional
 
 from sebex.config.file import ConfigFile
 from sebex.config.format import Format, LinesFormat
@@ -26,8 +26,8 @@ class UserDefinedProfile(ConfigFile, Profile):
     _index: Pattern
 
     @classmethod
-    def format(cls) -> Type[Format]:
-        return LinesFormat
+    def format(cls) -> Format:
+        return LinesFormat()
 
     def __init__(self, name: Optional[str], data):
         assert name is not None and name.startswith(PROFILE_PREFIX), \
