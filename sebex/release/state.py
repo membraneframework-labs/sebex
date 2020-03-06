@@ -17,19 +17,24 @@ from sebex.log import operation, error
 class ReleaseState(ConfigFile):
     _name = 'release'
 
+    sources: Dict[ProjectHandle, Version]
     phases: List['PhaseState']
 
-    def __init__(self, name=None, data=None, phases=None):
+    def __init__(self, name=None, data=None, sources=None, phases=None):
+        self.sources = sources
         self.phases = phases
 
         super().__init__(name, data)
 
     def _load_data(self, data):
         if data is not None:
+            self.sources = {ProjectHandle.parse(p): Version.parse(v)
+                            for p, v in data['release'].items()}
             self.phases = [PhaseState.from_raw(p) for p in data['phases']]
 
     def _make_data(self):
         return {
+            'release': {str(p): str(v) for p, v in self.sources.items()},
             'phases': [p.to_raw() for p in self.phases]
         }
 
@@ -72,12 +77,14 @@ class ReleaseState(ConfigFile):
 
             if from_version == to_version:
                 # We are not releasing anything at all.
-                return cls(phases=[])
+                return cls(sources={}, phases=[])
             elif from_version > to_version:
                 # We are backporting bug fixes to older releases than the current one.
                 raise NotImplementedError('backports are not implemented yet')
             else:
                 # We are making a brand-new release
+                sources = {project: to_version}
+
                 phases = graph.upgrade_phases(about_project.package)
                 phases = (
                     (db.get_project_by_package(pkg) for pkg in sorted(phase))
@@ -86,26 +93,23 @@ class ReleaseState(ConfigFile):
                 phases = [PhaseState.clean(projs, db) for projs in phases]
                 assert len(phases) > 0
 
-                rel = cls(phases=phases)
+                rel = cls(sources=sources, phases=phases)
 
                 # Seed the release with initial project
                 rel.get_project(project).to_version = to_version
 
-                rel._solve_bumps([project], db, graph)
+                rel._solve_bumps(db, graph)
                 return rel
 
-    def _solve_bumps(self, seeds: Collection[ProjectHandle],
-                     db: AnalysisDatabase, graph: DependentsGraph):
+    def _solve_bumps(self, db: AnalysisDatabase, graph: DependentsGraph):
         """
         Propagate version bumps down the phases, we are searching for
         maximum needed bump for each project.
-
-        :param seeds: A collection of projects that should not be bumped.
         """
 
         bumps = defaultdict(lambda: Bump.STAY_AS_IS)
 
-        for handle in seeds:
+        for handle in self.sources.keys():
             project = self.get_project(handle)
             bumps[handle] = Bump.between(project.from_version, project.to_version)
             assert bumps[handle] != Bump.STAY_AS_IS
@@ -129,7 +133,10 @@ class ReleaseState(ConfigFile):
         # Apply found version bumps to projects
         for phase in self.phases:
             for proj in phase:
-                proj.to_version = bumps[proj.project].apply(proj.from_version)
+                if proj.project in self.sources:
+                    proj.to_version = self.sources[proj.project]
+                else:
+                    proj.to_version = bumps[proj.project].apply(proj.from_version)
 
 
 @dataclass

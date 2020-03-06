@@ -21,7 +21,7 @@ def test_new_no_release():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[])
+    assert rel == ReleaseState(sources={}, phases=[])
 
 
 def test_release_stable_patch_without_deps():
@@ -33,15 +33,18 @@ def test_release_stable_patch_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.0.1'),
-            )
-        ])
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('1.0.1')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                )
+            ])
+        ],
+    )
 
 
 def test_release_stable_minor_without_deps():
@@ -53,15 +56,18 @@ def test_release_stable_minor_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            )
-        ])
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('1.1.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                )
+            ])
+        ],
+    )
 
 
 def test_release_stable_major_without_deps():
@@ -73,15 +79,18 @@ def test_release_stable_major_without_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('2.0.0'),
-            )
-        ])
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('2.0.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('2.0.0'),
+                )
+            ])
+        ],
+    )
 
 
 def test_release_stable_patch_with_one_level_of_deps():
@@ -93,22 +102,25 @@ def test_release_stable_patch_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.0.1'),
-            )
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.0.1'),
-            )
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('1.0.1')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                )
+            ]),
+        ],
+    )
 
 
 def test_release_stable_minor_with_one_level_of_deps():
@@ -120,22 +132,25 @@ def test_release_stable_minor_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            )
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.0.1'),
-            )
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('1.1.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                )
+            ]),
+        ],
+    )
 
 
 def test_release_stable_major_with_one_level_of_deps():
@@ -147,22 +162,55 @@ def test_release_stable_major_with_one_level_of_deps():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('2.0.0'),
-            )
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            )
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('2.0.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('2.0.0'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                )
+            ]),
+        ],
+    )
+
+
+def test_release_indirect_bump_with_one_level_of_deps():
+    db = chain_db()
+    graph = DependentsGraph.build(db)
+    rel = ReleaseState.plan(
+        project=ProjectHandle.parse('a0'),
+        to_version=Version.parse('1.2.3'),
+        db=db,
+        graph=graph
+    )
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('1.2.3')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.2.3'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                )
+            ]),
+        ],
+    )
 
 
 def test_release_pre_patch():
@@ -174,27 +222,30 @@ def test_release_pre_patch():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('0.1.0'),
-                to_version=Version.parse('0.1.1'),
-            )
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.0.1'),
-            ),
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b1'),
-                from_version=Version.parse('0.1.0'),
-                to_version=Version.parse('0.1.1'),
-            ),
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('0.1.1')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('0.1.0'),
+                    to_version=Version.parse('0.1.1'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.0.1'),
+                ),
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b1'),
+                    from_version=Version.parse('0.1.0'),
+                    to_version=Version.parse('0.1.1'),
+                ),
+            ]),
+        ],
+    )
 
 
 def test_release_pre_minor():
@@ -206,27 +257,30 @@ def test_release_pre_minor():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a0'),
-                from_version=Version.parse('0.1.0'),
-                to_version=Version.parse('0.2.0'),
-            )
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b0'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            ),
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b1'),
-                from_version=Version.parse('0.1.0'),
-                to_version=Version.parse('0.2.0'),
-            ),
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('0.2.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a0'),
+                    from_version=Version.parse('0.1.0'),
+                    to_version=Version.parse('0.2.0'),
+                )
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                ),
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b1'),
+                    from_version=Version.parse('0.1.0'),
+                    to_version=Version.parse('0.2.0'),
+                ),
+            ]),
+        ],
+    )
 
 
 def test_transitive_dep():
@@ -238,26 +292,29 @@ def test_transitive_dep():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(phases=[
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('c'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('2.0.0'),
-            ),
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('b'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            ),
-        ]),
-        PhaseState([
-            ProjectReleaseState(
-                project=ProjectHandle.parse('a'),
-                from_version=Version.parse('1.0.0'),
-                to_version=Version.parse('1.1.0'),
-            ),
-        ]),
-    ])
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('c'): Version.parse('2.0.0')},
+        phases=[
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('c'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('2.0.0'),
+                ),
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('b'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                ),
+            ]),
+            PhaseState([
+                ProjectReleaseState(
+                    project=ProjectHandle.parse('a'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                ),
+            ]),
+        ],
+    )
