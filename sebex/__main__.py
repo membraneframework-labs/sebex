@@ -15,6 +15,7 @@ from .log import FatalError
 
 @click.group()
 @click.version_option(__version__)
+@click.option('-y', '--assumeyes', is_flag=True, help='Automatically answer yes for all questions.')
 @click.option('--workspace', type=click.Path(exists=True, file_okay=False, writable=True),
               default='.', required=True, show_default=True, show_envvar=True,
               help='Path to the workspace directory.')

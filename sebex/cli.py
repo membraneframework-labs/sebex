@@ -2,6 +2,7 @@ import click
 
 from sebex.analysis import Version
 from sebex.config import ProjectHandle, Manifest
+from sebex.context import Context
 
 
 class ProjectType(click.ParamType):
@@ -35,4 +36,13 @@ class VersionType(click.ParamType):
         except ValueError:
             self.fail(f'{value!r} is not a valid version')
 
+
 VERSION = VersionType()
+
+
+def confirm(text: str) -> bool:
+    ctx = Context.current()
+    if ctx.assume_yes:
+        return True
+    else:
+        return click.confirm(text)

@@ -61,7 +61,7 @@ class ReleaseState(ConfigFile):
 
     def describe(self) -> str:
         header = f'Release "{self.codename()}"'
-        txt = f'{header}\n{"=" * len(header)}\n\n'
+        txt = f'{click.style(header, fg="magenta")}\n{click.style("=" * len(header), fg="magenta")}\n\n'
 
         for i, phase in enumerate(self.phases, start=1):
             txt += f'{i}. {phase.describe()}'
