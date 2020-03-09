@@ -1,5 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
+from functools import total_ordering
 from textwrap import indent
 from typing import List, Iterator, Collection, Iterable, Dict
 
@@ -11,6 +13,46 @@ from sebex.checksum import Checksum
 from sebex.config import ProjectHandle, ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.log import operation, error
+
+
+@total_ordering
+class ReleaseStage(Enum):
+    CLEAN = 'clean'
+    BRANCH_OPENED = 'branch_opened'
+    PULL_REQUEST_OPENED = 'pull_request_opened'
+    PULL_REQUEST_MERGED = 'pull_request_merged'
+    PUBLISHED = 'published'
+    DONE = 'done'
+
+    @property
+    def human(self) -> str:
+        return self.value.replace('_', ' ').upper()
+
+    def describe(self) -> str:
+        if self == self.CLEAN:
+            return ''
+        elif self == self.DONE:
+            return click.style(self.human, fg='green', bold=True)
+        else:
+            return click.style(self.human, fg='blue', bold=True)
+
+    def __lt__(self, other) -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        elif self == other:
+            return False
+        else:
+            for e in self.__class__:
+                if e == self:
+                    return True
+            else:
+                return False
+
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return self.value
 
 
 @dataclass
@@ -52,17 +94,33 @@ class ReleaseState(ConfigFile):
 
         return False
 
-    def get_project(self, project: ProjectHandle) -> 'ProjectReleaseState':
+    def get_project(self, project: ProjectHandle) -> 'ProjectState':
         for phase in self.phases:
             if phase.has_project(project):
                 return phase.get_project(project)
 
         raise KeyError(f'Project {project} is not part of this release.')
 
+    def current_phase(self) -> 'PhaseState':
+        for phase in self.phases:
+            if not phase.is_done():
+                return phase
+        else:
+            return self.phases[-1]
+
+    def is_clean(self):
+        return self.current_phase() == self.phases[0] and self.phases[0].is_clean()
+
+    def is_done(self):
+        return self.current_phase() == self.phases[-1] and self.phases[-1].is_done()
+
+    def is_in_progress(self):
+        return not self.is_clean() and not self.is_done()
+
     def describe(self) -> str:
-        header = f'Release "{self.codename()}"'
-        txt = f'{click.style(header, fg="magenta")}\n' \
-              f'{click.style("=" * len(header), fg="magenta")}\n\n'
+        header = click.style(f'Release "{self.codename()}"', fg="magenta")
+        txt = f'{header}\n' \
+              f'{click.style("=" * len(click.unstyle(header)), fg="magenta")}\n\n'
 
         for i, phase in enumerate(self.phases, start=1):
             txt += f'{i}. {phase.describe(self)}'
@@ -142,39 +200,54 @@ class ReleaseState(ConfigFile):
 
 @dataclass
 class PhaseState(Collection['ProjectReleaseState']):
-    _items: List['ProjectReleaseState']
+    _projects: List['ProjectState']
 
     def __len__(self) -> int:
-        return len(self._items)
+        return len(self._projects)
 
-    def __iter__(self) -> Iterator['ProjectReleaseState']:
-        return iter(self._items)
+    def __iter__(self) -> Iterator['ProjectState']:
+        return iter(self._projects)
 
     def __contains__(self, item) -> bool:
-        return item in self._items
+        return item in self._projects
+
+    def is_clean(self):
+        return all(p.stage == ReleaseStage.CLEAN for p in self._projects)
+
+    def is_done(self):
+        return all(p.stage == ReleaseStage.DONE for p in self._projects)
+
+    def is_in_progress(self):
+        return not self.is_clean() and not self.is_done()
 
     def codename(self) -> str:
         return Checksum.of(self).petname
 
     def has_project(self, project: ProjectHandle) -> bool:
-        for prs in self._items:
+        for prs in self._projects:
             if prs.project == project:
                 return True
 
         return False
 
-    def get_project(self, project: ProjectHandle) -> 'ProjectReleaseState':
-        for prs in self._items:
+    def get_project(self, project: ProjectHandle) -> 'ProjectState':
+        for prs in self._projects:
             if prs.project == project:
                 return prs
 
         raise KeyError(f'This phase does not include project {project}')
 
     def describe(self, release: ReleaseState) -> str:
-        header = f'Phase "{self.codename()}"'
+        stage = ''
+        if self.is_in_progress():
+            stage = click.style('IN PROGRESS', fg='blue', bold=True)
+        elif self.is_done():
+            stage = click.style('DONE', fg='blue', bold=True)
+
+        header = ', '.join([f'Phase "{self.codename()}"', stage])
         txt = f'{header}\n'
 
-        for proj in sorted(self._items, key=lambda p: p.project):
+        for proj in sorted(self._projects, key=lambda p: p.project):
             descr = '  * ' + indent(proj.describe(release), '    ')[4:]
             txt += f'{descr}\n'
 
@@ -182,23 +255,24 @@ class PhaseState(Collection['ProjectReleaseState']):
 
     @classmethod
     def clean(cls, projects: Iterable[ProjectHandle], db: AnalysisDatabase) -> 'PhaseState':
-        return PhaseState([ProjectReleaseState.clean(proj, db) for proj in projects])
+        return PhaseState([ProjectState.clean(proj, db) for proj in projects])
 
     def to_raw(self) -> Dict:
         return {
-            'projects': [p.to_raw() for p in self._items],
+            'projects': [p.to_raw() for p in self._projects],
         }
 
     @classmethod
     def from_raw(cls, o: Dict) -> 'PhaseState':
-        return cls([ProjectReleaseState.from_raw(p) for p in o['projects']])
+        return cls([ProjectState.from_raw(p) for p in o['projects']])
 
 
 @dataclass
-class ProjectReleaseState:
+class ProjectState:
     project: ProjectHandle
     from_version: Version
     to_version: Version
+    stage: ReleaseStage = ReleaseStage.CLEAN
 
     @property
     def bump(self) -> Bump:
@@ -213,15 +287,19 @@ class ProjectReleaseState:
         from_version = click.style(str(self.from_version), fg="cyan")
         to_version = click.style(str(self.to_version), fg=_bump_color(self.bump))
 
-        return f'{project_name}, {from_version} -> {to_version}'
+        return ', '.join([
+            f'{project_name}',
+            f'{from_version} -> {to_version}',
+            self.stage.describe(),
+        ])
 
     @classmethod
-    def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectReleaseState':
+    def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectState':
         about = db.about(project)
         return cls(
             project=project,
             from_version=about.version,
-            to_version=about.version
+            to_version=about.version,
         )
 
     def to_raw(self) -> Dict:
@@ -229,14 +307,16 @@ class ProjectReleaseState:
             "project": str(self.project),
             "from_version": str(self.from_version),
             "to_version": str(self.to_version),
+            "stage": str(self.stage),
         }
 
     @classmethod
-    def from_raw(cls, o: Dict) -> 'ProjectReleaseState':
+    def from_raw(cls, o: Dict) -> 'ProjectState':
         return cls(
             project=ProjectHandle.parse(o['project']),
             from_version=Version.parse(o['from_version']),
             to_version=Version.parse(o['to_version']),
+            stage=ReleaseStage(o['stage']),
         )
 
 

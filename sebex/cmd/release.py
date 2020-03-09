@@ -58,7 +58,9 @@ def plan(project: ProjectHandle, version: Version, dry: bool):
 
 
 @release.command(name='continue')
-def cont():
+@click.option('--dry', is_flag=True,
+              help='Print what would be done, but do not execute any actions.')
+def cont(dry: bool):
     """
     Execute saved release plan until next breakpoint.
     """
