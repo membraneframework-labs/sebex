@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import NoReturn
 
 import click
 
@@ -26,7 +27,7 @@ class FatalError(Exception):
     pass
 
 
-def fatal(*msg):
+def fatal(*msg) -> NoReturn:
     error('FATAL:', *msg)
     raise FatalError()
 
