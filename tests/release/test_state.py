@@ -436,6 +436,7 @@ def test_release_stage_ordering():
     assert vs[0] != vs[1]
     assert vs[0] < vs[1]
     assert vs[1] > vs[0]
-    assert next(vs[0]) == vs[1]
+    assert vs[0].next == vs[1]
     with pytest.raises(StopIteration):
-        next(vs[-1])
+        _ = vs[-1].next
+    assert list(iter(vs[0])) == vs[1:]

@@ -37,10 +37,11 @@ class ReleaseStage(Enum):
             return click.style(self.human, fg='blue', bold=True)
 
     def __iter__(self):
-        return self
+        return iter(s for s in self.__class__ if s > self)
 
-    def __next__(self):
-        return next(s for s in self.__class__ if s > self)
+    @property
+    def next(self) -> 'ReleaseStage':
+        return next(iter(self))
 
     def __le__(self, other) -> bool:
         if not isinstance(other, self.__class__):
