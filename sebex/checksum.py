@@ -43,7 +43,7 @@ class Checksum:
             if isinstance(x, Checksumable):
                 x.checksum(visit)
             elif isinstance(x, dict):
-                for k, v in x:
+                for k, v in x.items():
                     visit(k)
                     visit(v)
             elif is_iterable(x):

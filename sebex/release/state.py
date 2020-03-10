@@ -9,7 +9,7 @@ import click
 
 from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
 from sebex.analysis.version import Bump, UnsolvableBump
-from sebex.checksum import Checksum
+from sebex.checksum import Checksum, Checksumable
 from sebex.config import ProjectHandle, ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.log import operation, error
@@ -60,7 +60,7 @@ class ReleaseStage(Enum):
 
 
 @dataclass
-class ReleaseState(ConfigFile):
+class ReleaseState(ConfigFile, Checksumable):
     _name = 'release'
 
     sources: Dict[ProjectHandle, Version]
@@ -130,6 +130,10 @@ class ReleaseState(ConfigFile):
             txt += f'{i}. {phase.describe(self)}'
 
         return txt
+
+    def checksum(self, hasher):
+        hasher(self.sources)
+        hasher(self.phases)
 
     @classmethod
     def plan(cls, project: ProjectHandle, to_version: Version,
@@ -203,7 +207,7 @@ class ReleaseState(ConfigFile):
 
 
 @dataclass
-class PhaseState(Collection['ProjectReleaseState']):
+class PhaseState(Collection['ProjectReleaseState'], Checksumable):
     _projects: List['ProjectState']
 
     def __len__(self) -> int:
@@ -261,6 +265,10 @@ class PhaseState(Collection['ProjectReleaseState']):
     def clean(cls, projects: Iterable[ProjectHandle], db: AnalysisDatabase) -> 'PhaseState':
         return PhaseState([ProjectState.clean(proj, db) for proj in projects])
 
+    def checksum(self, hasher):
+        for p in self._projects:
+            hasher(p)
+
     def to_raw(self) -> Dict:
         return {
             'projects': [p.to_raw() for p in self._projects],
@@ -272,7 +280,7 @@ class PhaseState(Collection['ProjectReleaseState']):
 
 
 @dataclass
-class ProjectState:
+class ProjectState(Checksumable):
     project: ProjectHandle
     from_version: Version
     to_version: Version
@@ -305,6 +313,11 @@ class ProjectState:
             from_version=about.version,
             to_version=about.version,
         )
+
+    def checksum(self, hasher):
+        hasher(self.project)
+        hasher(self.from_version)
+        hasher(self.to_version)
 
     def to_raw(self) -> Dict:
         return {
