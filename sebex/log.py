@@ -9,13 +9,10 @@ _logcontext_var = ContextVar('sebex_logcontext')
 
 
 def log(*msg, color=None):
-    message = ' '.join(chain(
+    click.echo(' '.join(chain(
         (click.style(f'[{c}]', fg='bright_black') for c in _logcontext_var.get([])),
-        (str(m) for m in msg)
-    ))
-    if color is not None:
-        message = click.style(message, fg=color)
-    click.echo(message)
+        (click.style(str(m), fg=color) for m in msg)
+    )))
 
 
 def success(*msg):
