@@ -1,7 +1,7 @@
 import pytest
 
 from analysis.mock_database import chain_db, triangle_db
-from sebex.analysis import DependentsGraph, Version
+from sebex.analysis import DependentsGraph, Version, Language
 from sebex.checksum import Checksum
 from sebex.config import ProjectHandle
 from sebex.release import ReleaseState, PhaseState, ProjectState, ReleaseStage
@@ -43,6 +43,7 @@ def test_release_stable_patch_without_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 )
             ])
         ],
@@ -66,6 +67,7 @@ def test_release_stable_minor_without_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 )
             ])
         ],
@@ -89,6 +91,7 @@ def test_release_stable_major_without_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                 )
             ])
         ],
@@ -112,6 +115,7 @@ def test_release_stable_patch_with_one_level_of_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -119,6 +123,7 @@ def test_release_stable_patch_with_one_level_of_deps():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 )
             ]),
         ],
@@ -142,6 +147,7 @@ def test_release_stable_minor_with_one_level_of_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -149,6 +155,7 @@ def test_release_stable_minor_with_one_level_of_deps():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 )
             ]),
         ],
@@ -172,6 +179,7 @@ def test_release_stable_major_with_one_level_of_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -179,6 +187,7 @@ def test_release_stable_major_with_one_level_of_deps():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 )
             ]),
         ],
@@ -202,6 +211,7 @@ def test_release_indirect_bump_with_one_level_of_deps():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.2.3'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -209,6 +219,7 @@ def test_release_indirect_bump_with_one_level_of_deps():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 )
             ]),
         ],
@@ -232,6 +243,7 @@ def test_release_pre_patch():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('0.1.0'),
                     to_version=Version.parse('0.1.1'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -239,11 +251,13 @@ def test_release_pre_patch():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.0.1'),
+                    language=Language.ELIXIR,
                 ),
                 ProjectState(
                     project=ProjectHandle.parse('b1'),
                     from_version=Version.parse('0.1.0'),
                     to_version=Version.parse('0.1.1'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -267,6 +281,7 @@ def test_release_pre_minor():
                     project=ProjectHandle.parse('a0'),
                     from_version=Version.parse('0.1.0'),
                     to_version=Version.parse('0.2.0'),
+                    language=Language.ELIXIR,
                 )
             ]),
             PhaseState([
@@ -274,11 +289,13 @@ def test_release_pre_minor():
                     project=ProjectHandle.parse('b0'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
                 ProjectState(
                     project=ProjectHandle.parse('b1'),
                     from_version=Version.parse('0.1.0'),
                     to_version=Version.parse('0.2.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -302,6 +319,7 @@ def test_transitive_dep():
                     project=ProjectHandle.parse('c'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
             PhaseState([
@@ -309,6 +327,7 @@ def test_transitive_dep():
                     project=ProjectHandle.parse('b'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
             PhaseState([
@@ -316,6 +335,7 @@ def test_transitive_dep():
                     project=ProjectHandle.parse('a'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -331,6 +351,7 @@ def test_current_phase_clean():
                     project=ProjectHandle.parse('c'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
             PhaseState([
@@ -338,6 +359,7 @@ def test_current_phase_clean():
                     project=ProjectHandle.parse('b'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -357,6 +379,7 @@ def test_current_phase_in_progress_dirty():
                     project=ProjectHandle.parse('c'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                     stage=ReleaseStage.PULL_REQUEST_OPENED,
                 ),
             ]),
@@ -365,6 +388,7 @@ def test_current_phase_in_progress_dirty():
                     project=ProjectHandle.parse('b'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -384,6 +408,7 @@ def test_current_phase_in_progress_clean():
                     project=ProjectHandle.parse('c'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                     stage=ReleaseStage.DONE,
                 ),
             ]),
@@ -392,6 +417,7 @@ def test_current_phase_in_progress_clean():
                     project=ProjectHandle.parse('b'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                 ),
             ]),
         ],
@@ -411,6 +437,7 @@ def test_current_phase_done():
                     project=ProjectHandle.parse('c'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('2.0.0'),
+                    language=Language.ELIXIR,
                     stage=ReleaseStage.DONE,
                 ),
             ]),
@@ -419,6 +446,7 @@ def test_current_phase_done():
                     project=ProjectHandle.parse('b'),
                     from_version=Version.parse('1.0.0'),
                     to_version=Version.parse('1.1.0'),
+                    language=Language.ELIXIR,
                     stage=ReleaseStage.DONE,
                 ),
             ]),

@@ -12,6 +12,9 @@ class Language(Enum):
     ELIXIR = 'elixir'
     UNKNOWN = 'unknown'
 
+    def __str__(self):
+        return self.value
+
 
 class AnalysisError(Exception):
     pass

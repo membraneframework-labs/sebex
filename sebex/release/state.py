@@ -7,7 +7,7 @@ from typing import List, Iterator, Collection, Iterable, Dict
 
 import click
 
-from sebex.analysis import Version, AnalysisDatabase, DependentsGraph
+from sebex.analysis import Version, AnalysisDatabase, DependentsGraph, Language
 from sebex.analysis.version import Bump, UnsolvableBump
 from sebex.checksum import Checksum, Checksumable
 from sebex.config import ProjectHandle, ConfigFile
@@ -285,6 +285,7 @@ class ProjectState(Checksumable):
     project: ProjectHandle
     from_version: Version
     to_version: Version
+    language: Language
     stage: ReleaseStage = ReleaseStage.CLEAN
 
     @property
@@ -313,19 +314,22 @@ class ProjectState(Checksumable):
             project=project,
             from_version=about.version,
             to_version=about.version,
+            language=db.language(project),
         )
 
     def checksum(self, hasher):
         hasher(self.project)
         hasher(self.from_version)
         hasher(self.to_version)
+        hasher(self.language)
 
     def to_raw(self) -> Dict:
         return {
-            "project": str(self.project),
-            "from_version": str(self.from_version),
-            "to_version": str(self.to_version),
-            "stage": str(self.stage),
+            'project': str(self.project),
+            'from_version': str(self.from_version),
+            'to_version': str(self.to_version),
+            'language': str(self.language),
+            'stage': str(self.stage),
         }
 
     @classmethod
@@ -334,6 +338,7 @@ class ProjectState(Checksumable):
             project=ProjectHandle.parse(o['project']),
             from_version=Version.parse(o['from_version']),
             to_version=Version.parse(o['to_version']),
+            language=Language(o['language']),
             stage=ReleaseStage(o['stage']),
         )
 
