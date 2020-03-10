@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Optional, List
+from typing import Optional, List
 
 from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
@@ -54,6 +54,13 @@ class AnalysisEntry:
         return bool(self.releases)
 
 
+@dataclass
+class DependencyUpdate:
+    package: str
+    to_spec: VersionSpec
+    to_spec_span: Span
+
+
 class LanguageSupport(ABC):
     @classmethod
     @abstractmethod
@@ -65,3 +72,7 @@ class LanguageSupport(ABC):
 
     @abstractmethod
     def analyze(self, project: ProjectHandle) -> AnalysisEntry: ...
+
+    @abstractmethod
+    def write_release(self, to_version: Version, to_version_span: Span,
+                      dependency_updates: List[DependencyUpdate]): ...

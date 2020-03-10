@@ -1,8 +1,10 @@
 import json
 import subprocess
 from pathlib import Path
+from typing import List
 
-from sebex.analysis.types import AnalysisEntry, Dependency, Release, Language, LanguageSupport
+from sebex.analysis.types import AnalysisEntry, Dependency, Release, Language, LanguageSupport, \
+    DependencyUpdate
 from sebex.analysis.version import VersionSpec, Version
 from sebex.config import ProjectHandle, RepositoryHandle
 from sebex.context import Context
@@ -69,6 +71,13 @@ class ElixirLanguageSupport(LanguageSupport):
 
         return AnalysisEntry(package=package, version=version, version_span=version_span,
                              dependencies=dependencies, releases=releases)
+
+    def write_release(self, to_version: Version, to_version_span: Span,
+                      dependencies: List[DependencyUpdate]):
+        print(to_version, to_version_span)
+        print(dependencies)
+
+        raise NotImplementedError
 
 
 def _is_tracked(file: Path, repo: RepositoryHandle):

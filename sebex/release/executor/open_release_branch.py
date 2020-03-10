@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from git import Head
 
+from sebex.languages import language_support_for
 from sebex.log import log, fatal, warn
 from sebex.release.executor.types import Task, Action
 from sebex.release.executor.util import release_branch_name
@@ -43,5 +44,8 @@ class OpenReleaseBranch(Task):
         # Checkout
         log('Checking out branch', branch_name)
         git.git.checkout('-b', branch_name)
+
+        # Perform necessary editions
+        language_support = language_support_for(self.project.language)
 
         raise NotImplementedError
