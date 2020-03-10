@@ -6,14 +6,14 @@ from git import Head
 from sebex.log import log, fatal, warn
 from sebex.release.executor.types import Task, Action
 from sebex.release.executor.util import release_branch_name
-from sebex.release.state import ReleaseStage
+from sebex.release.state import ReleaseStage, ReleaseState
 
 
 @dataclass
 class OpenReleaseBranch(Task):
     stage: ClassVar[ReleaseStage] = ReleaseStage.BRANCH_OPENED
 
-    def run(self) -> Action:
+    def run(self, release: ReleaseState) -> Action:
         handle = self.project.project
         git = handle.repo.git
         branch_name = release_branch_name(self.project)

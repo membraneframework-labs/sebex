@@ -45,7 +45,7 @@ def proceed(release: ReleaseState) -> Action:
                 task: Task = klass(project=proj)
 
                 with operation(task.human_name) as reporter:
-                    action = task.run()
+                    action = task.run(release)
                     proj.stage = next_stage
                     reporter(action.report())
 

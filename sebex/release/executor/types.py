@@ -6,7 +6,7 @@ from typing import ClassVar, Optional
 
 import click
 
-from sebex.release.state import ProjectState, ReleaseStage
+from sebex.release.state import ProjectState, ReleaseStage, ReleaseState
 
 
 class Action(Enum):
@@ -36,7 +36,7 @@ class Task(ABC):
     project: ProjectState
 
     @abstractmethod
-    def run(self) -> Action:
+    def run(self, release: ReleaseState) -> Action:
         """Execute this task and return action to perform after."""
         ...
 
