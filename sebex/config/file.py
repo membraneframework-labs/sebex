@@ -50,6 +50,10 @@ class ConfigFile:
         with open(self.format().full_path(self._name), 'w') as f:
             self.format().dump(self._make_data(), f)
 
+    def delete(self):
+        full_path = self.format().full_path(self._name)
+        full_path.unlink()
+
     @contextmanager
     def transaction(self: K):
         try:

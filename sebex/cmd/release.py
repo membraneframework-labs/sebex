@@ -3,8 +3,8 @@ import click
 from sebex.analysis import Version, analyze
 from sebex.cli import PROJECT, VERSION, confirm
 from sebex.config import ProjectHandle
-from sebex.log import success, log, fatal, operation
-from sebex.release.state import ReleaseState
+from sebex.log import success, log, fatal, operation, warn
+from sebex.release import ReleaseState, executor
 
 
 @click.group()
@@ -57,12 +57,35 @@ def plan(project: ProjectHandle, version: Version, dry: bool):
                 rel.save()
 
 
-@release.command(name='continue')
+@release.command()
 @click.option('--dry', is_flag=True,
-              help='Print what would be done, but do not execute any actions.')
-def cont(dry: bool):
+              help='Print what would be done, but do not perform any changes.')
+def proceed(dry: bool):
     """
-    Execute saved release plan until next breakpoint.
+    Execute saved release plan until next breakpoint or new phase.
     """
 
-    pass
+    if not ReleaseState.exists():
+        fatal('There is no release pending at this moment. Please create one beforehand.')
+
+    rel = ReleaseState.open()
+    if dry:
+        for task in executor.plan(rel):
+            log(f'{task.project.project}: {task.human_name}')
+    else:
+        with operation('Proceeding release'):
+            with rel.transaction():
+                action = executor.proceed(rel)
+
+        if action == executor.Action.FINISH:
+            if rel.is_done():
+                success('Release finished successfully!')
+
+                with operation('Removing release state file'):
+                    rel.delete()
+            else:
+                success(f'The phase "{rel.current_phase().codename()}" has finished successfully!')
+                warn('To proceed, rerun this command.')
+        elif action == executor.Action.BREAKPOINT:
+            warn('A breakpoint has been reached!')
+            warn('Do necessary manual actions and go back here by rerunning this command.')
