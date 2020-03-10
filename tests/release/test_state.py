@@ -1,3 +1,5 @@
+import pytest
+
 from analysis.mock_database import chain_db, triangle_db
 from sebex.analysis import DependentsGraph, Version
 from sebex.checksum import Checksum
@@ -426,3 +428,14 @@ def test_current_phase_done():
     assert rel.phases[1].is_done()
     assert rel.current_phase() == rel.phases[-1]
     assert rel.is_done()
+
+
+def test_release_stage_ordering():
+    vs = [p for p in ReleaseStage]
+    assert vs[0] == vs[0]
+    assert vs[0] != vs[1]
+    assert vs[0] < vs[1]
+    assert vs[1] > vs[0]
+    assert next(vs[0]) == vs[1]
+    with pytest.raises(StopIteration):
+        next(vs[-1])

@@ -36,17 +36,21 @@ class ReleaseStage(Enum):
         else:
             return click.style(self.human, fg='blue', bold=True)
 
-    def __lt__(self, other) -> bool:
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(s for s in self.__class__ if s > self)
+
+    def __le__(self, other) -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
-        elif self == other:
-            return False
         else:
             for e in self.__class__:
                 if e == self:
                     return True
-            else:
-                return False
+                elif e == other:
+                    return False
 
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
