@@ -27,13 +27,12 @@ class Action(Enum):
 
 @dataclass
 class Task(ABC):
-    """
-    A `stage` class field must be present in each task class.
-    """
-
-    stage: ClassVar[ReleaseStage]
-
     project: ProjectState
+
+    @abstractmethod
+    def stage(self) -> ReleaseStage:
+        """The stage the project will enter after completing this task."""
+        ...
 
     @abstractmethod
     def run(self, release: ReleaseState) -> Action:

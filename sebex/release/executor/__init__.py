@@ -20,7 +20,7 @@ _ALL_TASK_TYPES: List[Type[Task]] = [
 
 def get_task_by_stage(stage: ReleaseStage) -> Type[Task]:
     for job in _ALL_TASK_TYPES:
-        if job.stage == stage:
+        if job.stage() == stage:
             return job
     else:
         raise ValueError(f'Stage {stage} cannot be reached by any task.')

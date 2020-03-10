@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import ClassVar
 
 from git import Head
 
@@ -11,7 +10,9 @@ from sebex.release.state import ReleaseStage, ReleaseState
 
 @dataclass
 class OpenReleaseBranch(Task):
-    stage: ClassVar[ReleaseStage] = ReleaseStage.BRANCH_OPENED
+    @classmethod
+    def stage(cls) -> ReleaseStage:
+        return ReleaseStage.BRANCH_OPENED
 
     def run(self, release: ReleaseState) -> Action:
         handle = self.project.project
