@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import ClassVar, Optional
+from typing import Optional
 
 import click
 
@@ -29,8 +29,9 @@ class Action(Enum):
 class Task(ABC):
     project: ProjectState
 
+    @classmethod
     @abstractmethod
-    def stage(self) -> ReleaseStage:
+    def stage(cls) -> ReleaseStage:
         """The stage the project will enter after completing this task."""
         ...
 
