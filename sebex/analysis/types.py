@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
@@ -59,6 +59,21 @@ class DependencyUpdate:
     package: str
     to_spec: VersionSpec
     to_spec_span: Span
+
+    def to_raw(self) -> Dict:
+        return {
+            'package': self.package,
+            'to_spec': self.to_spec.to_raw(),
+            'to_spec_span': self.to_spec_span.to_raw(),
+        }
+
+    @classmethod
+    def from_raw(cls, raw: Dict) -> 'DependencyUpdate':
+        return DependencyUpdate(
+            package=raw['package'],
+            to_spec=VersionSpec.from_raw(raw['to_spec']),
+            to_spec_span=Span.from_raw(raw['to_spec_span']),
+        )
 
 
 class LanguageSupport(ABC):

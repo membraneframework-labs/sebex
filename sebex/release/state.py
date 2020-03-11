@@ -7,11 +7,12 @@ from typing import List, Iterator, Collection, Iterable, Dict
 
 import click
 
-from sebex.analysis import Version, AnalysisDatabase, DependentsGraph, Language
-from sebex.analysis.version import Bump, UnsolvableBump
+from sebex.analysis import Version, AnalysisDatabase, DependentsGraph, Language, DependencyUpdate, \
+    Bump, UnsolvableBump
 from sebex.checksum import Checksum, Checksumable
 from sebex.config import ProjectHandle, ConfigFile
 from sebex.config.format import Format, YamlFormat
+from sebex.edit import Span
 from sebex.log import operation, error
 
 
@@ -285,7 +286,9 @@ class ProjectState(Checksumable):
     project: ProjectHandle
     from_version: Version
     to_version: Version
+    version_span: Span
     language: Language
+    dependency_updates: List[DependencyUpdate]
     stage: ReleaseStage = ReleaseStage.CLEAN
 
     @property
@@ -314,7 +317,9 @@ class ProjectState(Checksumable):
             project=project,
             from_version=about.version,
             to_version=about.version,
+            version_span=about.version_span,
             language=db.language(project),
+            dependency_updates=[],
         )
 
     def checksum(self, hasher):
@@ -326,10 +331,12 @@ class ProjectState(Checksumable):
     def to_raw(self) -> Dict:
         return {
             'project': str(self.project),
-            'from_version': str(self.from_version),
-            'to_version': str(self.to_version),
             'language': str(self.language),
             'stage': str(self.stage),
+            'from_version': str(self.from_version),
+            'to_version': str(self.to_version),
+            'version_span': self.version_span.to_raw(),
+            'dependency_updates:': [d.to_raw() for d in self.dependency_updates],
         }
 
     @classmethod
@@ -338,7 +345,9 @@ class ProjectState(Checksumable):
             project=ProjectHandle.parse(o['project']),
             from_version=Version.parse(o['from_version']),
             to_version=Version.parse(o['to_version']),
+            version_span=Span.from_raw(o['version_span']),
             language=Language(o['language']),
+            dependency_updates=[DependencyUpdate.from_raw(d) for d in o['dependency_updates']],
             stage=ReleaseStage(o['stage']),
         )
 

@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import IntEnum
 from typing import Tuple, NewType, Set, Union, Dict, Optional
 
@@ -182,8 +182,18 @@ class GitRequirement:
     submodules: bool = False
     sparse: bool = False
 
+    def to_raw(self) -> Dict:
+        return {
+            ('github' if self.is_github else 'git'): self.uri,
+            **{
+                f.name: str(getattr(self, f.name))
+                for f in fields(self)
+                if f.name not in {'uri', 'is_github'} and getattr(self, f.name, None)
+            }
+        }
+
     @classmethod
-    def from_dict(cls, raw: Dict) -> 'GitRequirement':
+    def from_raw(cls, raw: Dict) -> 'GitRequirement':
         if 'github' in raw:
             uri = raw['github']
             is_github = True
@@ -206,8 +216,11 @@ class GitRequirement:
 class PathRequirement:
     path: str
 
+    def to_raw(self) -> Dict:
+        return {'path': self.path}
+
     @classmethod
-    def from_dict(cls, raw: Dict) -> 'PathRequirement':
+    def from_raw(cls, raw: Dict) -> 'PathRequirement':
         return cls(raw['path'])
 
 
@@ -225,6 +238,12 @@ class VersionSpec:
     def is_external(self) -> bool:
         return isinstance(self.value, GitRequirement) or isinstance(self.value, PathRequirement)
 
+    def to_raw(self):
+        if self.is_version:
+            return str(self.value)
+        else:
+            return self.value.to_raw()
+
     @classmethod
     def parse(cls, raw) -> 'VersionSpec':
         if isinstance(raw, str):
@@ -232,11 +251,13 @@ class VersionSpec:
 
         if isinstance(raw, dict):
             if 'path' in raw:
-                return cls(PathRequirement.from_dict(raw))
+                return cls(PathRequirement.from_raw(raw))
             if 'git' in raw or 'github' in raw:
-                return cls(GitRequirement.from_dict(raw))
+                return cls(GitRequirement.from_raw(raw))
 
         raise ValueError(f'Unable to parse version spec: {raw!r}')
+
+    from_raw = parse
 
     @classmethod
     def targeting(cls, version: Version) -> 'VersionSpec':
