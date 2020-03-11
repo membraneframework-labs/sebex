@@ -186,7 +186,7 @@ class GitRequirement:
         return {
             ('github' if self.is_github else 'git'): self.uri,
             **{
-                f.name: str(getattr(self, f.name))
+                f.name: getattr(self, f.name)
                 for f in fields(self)
                 if f.name not in {'uri', 'is_github'} and getattr(self, f.name, None)
             }
