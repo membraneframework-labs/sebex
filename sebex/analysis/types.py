@@ -34,6 +34,14 @@ class Dependency:
             result += f' (locked at {self.version_lock})'
         return result
 
+    def prepare_update(self, to_spec: VersionSpec) -> 'DependencyUpdate':
+        return DependencyUpdate(
+            name=self.name,
+            from_spec=self.version_spec,
+            to_spec=to_spec,
+            to_spec_span=self.version_spec_span,
+        )
+
 
 @dataclass(order=True, frozen=True)
 class Release:
@@ -56,13 +64,15 @@ class AnalysisEntry:
 
 @dataclass
 class DependencyUpdate:
-    package: str
+    name: str
+    from_spec: VersionSpec
     to_spec: VersionSpec
     to_spec_span: Span
 
     def to_raw(self) -> Dict:
         return {
-            'package': self.package,
+            'name': self.name,
+            'from_spec': self.from_spec.to_raw(),
             'to_spec': self.to_spec.to_raw(),
             'to_spec_span': self.to_spec_span.to_raw(),
         }
@@ -70,7 +80,8 @@ class DependencyUpdate:
     @classmethod
     def from_raw(cls, raw: Dict) -> 'DependencyUpdate':
         return DependencyUpdate(
-            package=raw['package'],
+            name=raw['name'],
+            from_spec=VersionSpec.from_raw(raw['from_spec']),
             to_spec=VersionSpec.from_raw(raw['to_spec']),
             to_spec_span=Span.from_raw(raw['to_spec_span']),
         )

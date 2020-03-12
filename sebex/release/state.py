@@ -1,19 +1,19 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import total_ordering
 from textwrap import indent
-from typing import List, Iterator, Collection, Iterable, Dict
+from typing import List, Iterator, Collection, Iterable, Dict, Tuple
 
 import click
 
 from sebex.analysis import Version, AnalysisDatabase, DependentsGraph, Language, DependencyUpdate, \
-    Bump, UnsolvableBump
+    Bump, UnsolvableBump, VersionRequirement, Dependency, VersionSpec
 from sebex.checksum import Checksum, Checksumable
 from sebex.config import ProjectHandle, ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.edit import Span
-from sebex.log import operation, error
+from sebex.log import operation, error, warn
 
 
 @total_ordering
@@ -167,28 +167,50 @@ class ReleaseState(ConfigFile, Checksumable):
                 # Seed the release with initial project
                 rel.get_project(project).to_version = to_version
 
-                rel._solve_bumps(db, graph)
+                rel._build_plan(db, graph)
+                rel._prune_unchanged()
                 return rel
 
-    def _solve_bumps(self, db: AnalysisDatabase, graph: DependentsGraph):
+    def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph):
         """
-        Propagate version bumps down the phases, we are searching for
-        maximum needed bump for each project.
+        Propagates version bumps down the phases, we are searching for
+        maximum needed bump for each project. Fills `dependency_updates` fields in project states.
         """
 
+        # We will track the minimal version bump needed for each project
         bumps = defaultdict(lambda: Bump.STAY_AS_IS)
+        dependency_updates = defaultdict(lambda: [])
 
+        # Seed bumps with source projects
         for handle in self.sources.keys():
             project = self.get_project(handle)
             bumps[handle] = Bump.between(project.from_version, project.to_version)
             assert bumps[handle] != Bump.STAY_AS_IS
 
-        for phase in self.phases:
-            for proj in phase:
-                for dep_pkg in graph.dependents_of(db.about(proj.project).package):
-                    dep = db.get_project_by_package(dep_pkg)
-                    dep_bump = bumps[proj.project].derive(proj.from_version)
-                    bumps[dep] = max(bumps[dep], dep_bump)
+        # Here we go
+        for project, dependency, relation in self._dependency_relations(db, graph):
+            # We need to handle each dependency kind (version req, git, path) separately
+            if relation.version_spec.is_version:
+                req: VersionRequirement = relation.version_spec.value
+
+                # We have to release a new version of dependent if its relation
+                # points to soon-to-be-outdated version of the dependency.
+                if req.match(project.from_version) and not req.match(project.to_version):
+                    dep_bump = bumps[project.project].derive(project.from_version)
+                    bumps[dependency] = max(bumps[dependency], dep_bump)
+
+                    update = relation.prepare_update(VersionSpec.targeting(project.to_version))
+                    dependency_updates[dependency].append(update)
+
+                # Notify user when we spot an obsolete package.
+                if not req.match(project.from_version):
+                    warn(f'Project {dependency} depends on an obsolete version '
+                         f'of {project.project} (current version is {project.to_version}, '
+                         f'while dependency requirement is {req}).')
+            else:
+                # TODO Implement handling Git & Path deps
+                warn('Project', dependency, 'depends on', project.project,
+                     'using git or path requirement, ignoring.')
 
         # Verify that all bumps are possible
         invalid_bumps = False
@@ -199,13 +221,61 @@ class ReleaseState(ConfigFile, Checksumable):
         if invalid_bumps:
             raise UnsolvableBump()
 
+        # Sort dependency updates by package names for testability
+        for lst in dependency_updates.values():
+            lst.sort(key=lambda u: u.name)
+
         # Apply found version bumps to projects
         for phase in self.phases:
-            for proj in phase:
-                if proj.project in self.sources:
-                    proj.to_version = self.sources[proj.project]
+            for project in phase:
+                if project.project in self.sources:
+                    project.to_version = self.sources[project.project]
                 else:
-                    proj.to_version = bumps[proj.project].apply(proj.from_version)
+                    project.to_version = bumps[project.project].apply(project.from_version)
+
+                project.dependency_updates = dependency_updates[project.project]
+
+    def _dependency_relations(
+        self,
+        db: AnalysisDatabase,
+        graph: DependentsGraph
+    ) -> Iterator[Tuple['ProjectState', ProjectHandle, Dependency]]:
+        """
+        Visits each project, in dependency-to-dependents order and yields tuples containing:
+        dependency release state, dependent handle, dependency relation details.
+        """
+
+        # Visit each project, in dependency-to-dependents order
+        for phase in self.phases:
+            for project in phase:
+                project_pkg = db.about(project.project).package
+
+                # Now for each project, get its dependents along with relations...
+                for dependency_pkg, relations in graph.dependents_of_detailed(project_pkg).items():
+                    dependency = db.get_project_by_package(dependency_pkg)
+
+                    # ...and find the dependency relation that connects these two directly.
+                    # There should be only one relation in the list, this condition works as an
+                    # assertion.
+                    relation = next(c for c in relations if c.name == project_pkg)
+
+                    yield project, dependency, relation
+
+    def _prune_unchanged(self):
+        """Drop no-op phases."""
+        pruned_phases = (
+            PhaseState([project for project in phase if not self._is_project_noop(project)])
+            for phase in self.phases
+        )
+        self.phases = [phase for phase in pruned_phases if phase]
+
+    @classmethod
+    def _is_project_noop(cls, project: 'ProjectState') -> bool:
+        if project.from_version == project.to_version:
+            assert not project.dependency_updates, f'Noop project {project!r} is in invalid state'
+            return True
+        else:
+            return False
 
 
 @dataclass
@@ -220,6 +290,9 @@ class PhaseState(Collection['ProjectReleaseState'], Checksumable):
 
     def __contains__(self, item) -> bool:
         return item in self._projects
+
+    def __bool__(self):
+        return bool(self._projects)
 
     def is_clean(self):
         return all(p.stage == ReleaseStage.CLEAN for p in self._projects)
@@ -248,13 +321,14 @@ class PhaseState(Collection['ProjectReleaseState'], Checksumable):
         raise KeyError(f'This phase does not include project {project}')
 
     def describe(self, release: ReleaseState) -> str:
-        stage = ''
-        if self.is_in_progress():
-            stage = click.style('IN PROGRESS', fg='blue', bold=True)
-        elif self.is_done():
-            stage = click.style('DONE', fg='blue', bold=True)
+        header = [f'Phase "{self.codename()}"']
 
-        header = ', '.join([f'Phase "{self.codename()}"', stage])
+        if self.is_in_progress():
+            header.append(click.style('IN PROGRESS', fg='blue', bold=True))
+        elif self.is_done():
+            header.append(click.style('DONE', fg='blue', bold=True))
+
+        header = ', '.join(header)
         txt = f'{header}\n'
 
         for proj in sorted(self._projects, key=lambda p: p.project):
@@ -288,7 +362,7 @@ class ProjectState(Checksumable):
     to_version: Version
     version_span: Span
     language: Language
-    dependency_updates: List[DependencyUpdate]
+    dependency_updates: List[DependencyUpdate] = field(default_factory=list)
     stage: ReleaseStage = ReleaseStage.CLEAN
 
     @property
@@ -304,11 +378,30 @@ class ProjectState(Checksumable):
         from_version = click.style(str(self.from_version), fg="cyan")
         to_version = click.style(str(self.to_version), fg=_bump_color(self.bump))
 
-        return ', '.join([
+        headline = [
             f'{project_name}',
             f'{from_version} -> {to_version}',
-            self.stage.describe(),
-        ])
+        ]
+
+        if self.stage.describe():
+            headline.append(self.stage.describe())
+
+        headline = ', '.join(headline)
+
+        lines = [headline]
+
+        if self.dependency_updates:
+            updates = [
+                f'{u.name}, "{u.from_spec}" -> "{u.to_spec}"'
+                for u in self.dependency_updates
+            ]
+            if len(updates) == 1:
+                updates = updates[0]
+            else:
+                updates = '\n' + indent('\n'.join(updates), '  - ')
+            lines.append(f'dependencies: {updates}')
+
+        return '\n'.join(lines)
 
     @classmethod
     def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectState':
@@ -319,7 +412,6 @@ class ProjectState(Checksumable):
             to_version=about.version,
             version_span=about.version_span,
             language=db.language(project),
-            dependency_updates=[],
         )
 
     def checksum(self, hasher):
@@ -329,15 +421,19 @@ class ProjectState(Checksumable):
         hasher(self.language)
 
     def to_raw(self) -> Dict:
-        return {
+        d = {
             'project': str(self.project),
             'language': str(self.language),
             'stage': str(self.stage),
             'from_version': str(self.from_version),
             'to_version': str(self.to_version),
             'version_span': self.version_span.to_raw(),
-            'dependency_updates:': [d.to_raw() for d in self.dependency_updates],
         }
+
+        if self.dependency_updates:
+            d['dependency_updates'] = [d.to_raw() for d in self.dependency_updates]
+
+        return d
 
     @classmethod
     def from_raw(cls, o: Dict) -> 'ProjectState':
@@ -347,7 +443,8 @@ class ProjectState(Checksumable):
             to_version=Version.parse(o['to_version']),
             version_span=Span.from_raw(o['version_span']),
             language=Language(o['language']),
-            dependency_updates=[DependencyUpdate.from_raw(d) for d in o['dependency_updates']],
+            dependency_updates=[DependencyUpdate.from_raw(d)
+                                for d in o.get('dependency_updates', [])],
             stage=ReleaseStage(o['stage']),
         )
 
