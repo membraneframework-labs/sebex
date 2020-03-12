@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, List, Dict
+from typing import List, Dict
 
 from sebex.analysis.version import Version, VersionSpec
 from sebex.config import ProjectHandle
@@ -26,13 +26,9 @@ class Dependency:
     defined_in: str
     version_spec: VersionSpec
     version_spec_span: Span
-    version_lock: Optional[Version] = None
 
     def version_str(self):
-        result = str(self.version_spec.value)
-        if self.version_lock is not None:
-            result += f' (locked at {self.version_lock})'
-        return result
+        return str(self.version_spec.value)
 
     def prepare_update(self, to_spec: VersionSpec) -> 'DependencyUpdate':
         return DependencyUpdate(

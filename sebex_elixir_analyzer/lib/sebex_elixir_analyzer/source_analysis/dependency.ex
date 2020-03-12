@@ -6,12 +6,11 @@ defmodule Sebex.ElixirAnalyzer.SourceAnalysis.Dependency do
           name: atom,
           version_spec: String.t() | map(),
           version_spec_span: Span.t(),
-          version_lock: String.t() | nil
         }
 
   @derive Jason.Encoder
   @enforce_keys [:name, :version_spec, :version_spec_span]
-  defstruct @enforce_keys ++ [version_lock: nil]
+  defstruct @enforce_keys
 
   @spec extract(Macro.t()) :: list(t())
   def extract(ast) do

@@ -15,10 +15,6 @@ def mix_file(project: ProjectHandle) -> Path:
     return project.location / 'mix.exs'
 
 
-def mix_lock(project: ProjectHandle) -> Path:
-    return project.location / 'mix.lock'
-
-
 class ElixirLanguageSupport(LanguageSupport):
     @classmethod
     def language(cls) -> Language:
@@ -37,25 +33,14 @@ class ElixirLanguageSupport(LanguageSupport):
         version = Version.parse(raw['version'])
         version_span = Span.from_raw(raw['version_span'])
 
-        def load_dependency(dep):
-            name = dep['name']
-
-            is_mix_lock_tracked = _is_tracked(mix_lock(project), project.repo)
-            raw_version_lock = dep['version_lock']
-            if is_mix_lock_tracked and raw_version_lock is not None:
-                version_lock = Version.parse(raw_version_lock)
-            else:
-                version_lock = None
-
-            return Dependency(
-                name=name,
+        dependencies = [
+            Dependency(
+                name=(dep['name']),
                 defined_in=package,
                 version_spec=VersionSpec.parse(dep['version_spec']),
                 version_spec_span=Span.from_raw(dep['version_spec_span']),
-                version_lock=version_lock
             )
-
-        dependencies = list(map(load_dependency, raw['dependencies']))
+            for dep in raw['dependencies']]
 
         hex_info = raw['hex']
         if hex_info['published']:

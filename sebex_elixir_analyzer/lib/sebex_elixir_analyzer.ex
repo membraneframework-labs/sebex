@@ -2,33 +2,15 @@ defmodule Sebex.ElixirAnalyzer do
   alias Sebex.ElixirAnalyzer.AnalysisReport
   alias Sebex.ElixirAnalyzer.HexInfo
   alias Sebex.ElixirAnalyzer.MixLoader
-  alias Sebex.ElixirAnalyzer.MixLock
   alias Sebex.ElixirAnalyzer.SourceAnalysis
 
   @spec analyze_mix_exs_file!(path :: Path.t()) :: AnalysisReport.t() | no_return
   def analyze_mix_exs_file!(path) do
-    mix_exs_source = File.read!(path)
-
-    mix_lock_path =
-      path
-      |> Path.dirname()
-      |> Path.join("mix.lock")
-
-    mix_lock_source =
-      if File.exists?(mix_lock_path) do
-        File.read!(mix_lock_path)
-      else
-        nil
-      end
-
-    analyze_mix_exs_source!(mix_exs_source, mix_lock_source)
+    File.read!(path) |> analyze_mix_exs_source!()
   end
 
-  @spec analyze_mix_exs_source!(
-          mix_exs_source :: String.t(),
-          mix_lock_source :: String.t() | nil
-        ) :: AnalysisReport.t() | no_return
-  def analyze_mix_exs_source!(mix_exs_source, mix_lock_source \\ nil) do
+  @spec analyze_mix_exs_source!(mix_exs_source :: String.t()) :: AnalysisReport.t() | no_return
+  def analyze_mix_exs_source!(mix_exs_source) do
     project_info = MixLoader.from_source!(mix_exs_source)
 
     package_name =
@@ -45,15 +27,7 @@ defmodule Sebex.ElixirAnalyzer do
         x -> x
       end
 
-    version_locks =
-      mix_lock_source
-      |> MixLock.from_string!()
-      |> MixLock.versions()
-
-    dependencies =
-      ast
-      |> SourceAnalysis.Dependency.extract()
-      |> Enum.map(&%{&1 | version_lock: Map.get(version_locks, &1.name, nil)})
+    dependencies = SourceAnalysis.Dependency.extract(ast)
 
     hex = HexInfo.fetch!(package_name)
 

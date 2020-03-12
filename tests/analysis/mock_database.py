@@ -26,27 +26,17 @@ def _default_spec(_package: str, depends_on: str, versions: Dict[str, Version]) 
     return VersionSpec.targeting(versions[depends_on])
 
 
-VersionSpecProvider = Callable[
-    [str, str, Dict[str, Version]],
-    Union[VersionSpec, Tuple[VersionSpec, Version]]
-]
+VersionSpecProvider = Callable[[str, str, Dict[str, Version]], VersionSpec]
 
 
 def _dep(name: str, defined_in: str,
          versions: Dict[str, Version],
          specs: VersionSpecProvider) -> Dependency:
-    spec_result = specs(defined_in, name, versions)
-    if isinstance(spec_result, tuple):
-        version_spec, version_lock = spec_result
-    else:
-        version_spec, version_lock = spec_result, None
-
     return Dependency(
         name=name,
         defined_in=defined_in,
-        version_spec=version_spec,
+        version_spec=specs(defined_in, name, versions),
         version_spec_span=Span.ZERO,
-        version_lock=version_lock,
     )
 
 
