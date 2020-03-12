@@ -40,6 +40,11 @@ class DependentsGraph:
         return dict(result)
 
     def upgrade_phases(self, package: str) -> List[Set[str]]:
+        """
+        Collect all dependents of `package`, sorted topologically,
+        with dependencies which are independent of each other grouped together into `phases`.
+        """
+
         depths = defaultdict(lambda: 0)
 
         def visit(pkg: str, depth: int):
