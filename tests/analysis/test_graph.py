@@ -71,13 +71,7 @@ def test_build_detects_cycles():
 
 def test_dependents_of():
     graph = DependentsGraph.build(stupid_db())
-    # print(graph.graphviz(STUPID_DB).view(cleanup=True))
-
-    assert graph.dependents_of('a') == {'b', 'c', 'f'}
-    assert graph.dependents_of('a', recursive=True) == {'b', 'c', 'd', 'f', 'g'}
-    assert graph.dependents_of('e', recursive=True) == set()
-
-    assert graph.dependents_of_detailed('a') == {
+    assert graph.dependents_of('a') == {
         'b': {
             Dependency(
                 name='a',
@@ -98,61 +92,6 @@ def test_dependents_of():
             Dependency(
                 name='a',
                 defined_in='f',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            )
-        },
-    }
-
-    assert graph.dependents_of_detailed('a', recursive=True) == {
-        'b': {
-            Dependency(
-                name='a',
-                defined_in='b',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            ),
-            Dependency(
-                name='f',
-                defined_in='b',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            ),
-        },
-        'c': {
-            Dependency(
-                name='a',
-                defined_in='c',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            ),
-            Dependency(
-                name='b',
-                defined_in='c',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            )
-        },
-        'd': {
-            Dependency(
-                name='b',
-                defined_in='d',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            )
-        },
-        'f': {
-            Dependency(
-                name='a',
-                defined_in='f',
-                version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
-                version_spec_span=Span.ZERO
-            )
-        },
-        'g': {
-            Dependency(
-                name='f',
-                defined_in='g',
                 version_spec=VersionSpec(VersionRequirement.parse('~> 1.0')),
                 version_spec_span=Span.ZERO
             )

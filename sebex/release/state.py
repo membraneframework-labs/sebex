@@ -251,7 +251,7 @@ class ReleaseState(ConfigFile, Checksumable):
                 project_pkg = db.about(project.project).package
 
                 # Now for each project, get its dependents along with relations...
-                for dependency_pkg, relations in graph.dependents_of_detailed(project_pkg).items():
+                for dependency_pkg, relations in graph.dependents_of(project_pkg).items():
                     dependency = db.get_project_by_package(dependency_pkg)
 
                     # ...and find the dependency relation that connects these two directly.

@@ -20,22 +20,11 @@ class DependentsGraph:
     def __len__(self):
         return len(self._graph)
 
-    def dependents_of(self, *args, **kwargs) -> Set[str]:
-        return set(self.dependents_of_detailed(*args, **kwargs).keys())
-
-    def dependents_of_detailed(self, package: str,
-                               recursive: bool = False) -> Dict[str, Set[Dependency]]:
+    def dependents_of(self, package: str) -> Dict[str, Set[Dependency]]:
         result = defaultdict(set)
 
-        def visit(pkg: str):
-            for dep in self._graph[pkg].values():
-                result[dep.defined_in].add(dep)
-
-            if recursive:
-                for dep in self._graph[pkg].keys():
-                    visit(dep)
-
-        visit(package)
+        for dep in self._graph[package].values():
+            result[dep.defined_in].add(dep)
 
         return dict(result)
 
