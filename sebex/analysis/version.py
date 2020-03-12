@@ -348,7 +348,13 @@ class Bump(IntEnum):
             >>> Bump.MINOR.derive(Version.parse('0.1.0'))
             <Bump.MINOR>
 
-        6. `STAY_AS_IS` and `UNSOLVABLE` always return themselves
+        6. If we release stable version of `A` <1.0 (0.1.0 -> 1.0.0),
+           then we bump *minor* `B` (1.0.0 -> 1.1.0)
+
+            >>> Bump.MAJOR.derive(Version.parse('0.1.0'))
+            <Bump.MINOR>
+
+        7. `STAY_AS_IS` and `UNSOLVABLE` always return themselves
 
             >>> Bump.STAY_AS_IS.derive(Version.parse('1.0.0'))
             <Bump.STAY_AS_IS>
@@ -367,6 +373,8 @@ class Bump(IntEnum):
                 return self.PATCH
             elif self == self.MINOR:
                 return self.MINOR
+            elif self == self.MAJOR:
+                return self.MINOR
         else:
             if self == self.PATCH:
                 return self.PATCH
@@ -375,7 +383,7 @@ class Bump(IntEnum):
             elif self == self.MAJOR:
                 return self.MINOR
 
-        assert False, 'unreachable'
+        assert False, f'unreachable {self!r} {dependency!r}'
 
     @classmethod
     def between(cls, fr: Version, to: Version) -> 'Bump':
