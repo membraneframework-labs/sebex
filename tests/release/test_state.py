@@ -525,3 +525,38 @@ def test_release_stage_ordering():
     with pytest.raises(StopIteration):
         _ = vs[-1].next
     assert list(iter(vs[0])) == vs[1:]
+
+
+def test_serialization():
+    rel = ReleaseState(
+        sources={ProjectHandle.parse('c'): Version.parse('2.0.0')},
+        phases=[
+            PhaseState([
+                ProjectState(
+                    project=ProjectHandle.parse('c'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('2.0.0'),
+                    version_span=Span.ZERO,
+                    language=Language.ELIXIR,
+                    stage=ReleaseStage.PULL_REQUEST_OPENED,
+                ),
+            ]),
+            PhaseState([
+                ProjectState(
+                    project=ProjectHandle.parse('b'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                    version_span=Span.ZERO,
+                    language=Language.ELIXIR,
+                    dependency_updates=[
+                        DependencyUpdate(
+                            name='c',
+                            to_spec=VersionSpec.parse('~> 2.0'),
+                            to_spec_span=Span.ZERO,
+                        ),
+                    ],
+                ),
+            ]),
+        ],
+    )
+    assert ReleaseState(data=rel._make_data()) == rel
