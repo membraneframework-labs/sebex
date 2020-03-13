@@ -1,5 +1,4 @@
 import json
-import subprocess
 from pathlib import Path
 from typing import List
 
@@ -9,6 +8,7 @@ from sebex.analysis.version import VersionSpec, Version
 from sebex.config import ProjectHandle, RepositoryHandle
 from sebex.context import Context
 from sebex.edit import Span
+from sebex.popen import popen
 
 
 def mix_file(project: ProjectHandle) -> Path:
@@ -25,8 +25,7 @@ class ElixirLanguageSupport(LanguageSupport):
         return mix_file(project).exists()
 
     def analyze(self, project: ProjectHandle) -> AnalysisEntry:
-        proc = subprocess.run([Context.current().elixir_analyzer, '--mix', mix_file(project)],
-                              capture_output=True, check=True)
+        proc = popen(Context.current().elixir_analyzer, ['--mix', mix_file(project)])
         raw = json.loads(proc.stdout)
 
         package = raw['package']
