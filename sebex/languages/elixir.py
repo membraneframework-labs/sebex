@@ -5,14 +5,20 @@ from typing import List
 from sebex.analysis.types import AnalysisEntry, Dependency, Release, Language, LanguageSupport, \
     DependencyUpdate
 from sebex.analysis.version import VersionSpec, Version
-from sebex.config import ProjectHandle, RepositoryHandle
+from sebex.config import ProjectHandle
 from sebex.context import Context
-from sebex.edit import Span
+from sebex.edit import Span, patch_file
+from sebex.edit.git import commit
+from sebex.log import operation
 from sebex.popen import popen
 
 
 def mix_file(project: ProjectHandle) -> Path:
     return project.location / 'mix.exs'
+
+
+def mix_lock(project: ProjectHandle) -> Path:
+    return project.location / 'mix.lock'
 
 
 class ElixirLanguageSupport(LanguageSupport):
@@ -56,18 +62,26 @@ class ElixirLanguageSupport(LanguageSupport):
         return AnalysisEntry(package=package, version=version, version_span=version_span,
                              dependencies=dependencies, releases=releases)
 
-    def write_release(self, to_version: Version, to_version_span: Span,
+    def write_release(self, project: ProjectHandle, to_version: Version, to_version_span: Span,
                       dependencies: List[DependencyUpdate]):
-        print(to_version, to_version_span)
-        print(dependencies)
+        with operation('Update mix.exs'):
+            patch_file(mix_file(project), [
+                (to_version_span, f'"{to_version}"'),
+                *[(dep.to_spec_span, self._translate_version_spec(dep.to_spec))
+                  for dep in dependencies]
+            ])
 
-        raise NotImplementedError
+            commit(project.repo, f'bump to {to_version}', [mix_file(project)])
 
+        if project.repo.is_tracked(mix_lock(project)):
+            with operation('Update lockfile'):
+                popen('mix', ['deps.update', '--all'], log_stdout=True, cwd=project.location)
+                if project.repo.is_changed(mix_lock(project)):
+                    commit(project.repo, 'update lockfile', [mix_lock(project)])
 
-def _is_tracked(file: Path, repo: RepositoryHandle):
-    file = file.resolve()
-    for line in repo.git.git.ls_files().split('\n'):
-        path = Path(line).resolve()
-        if file == path:
-            return True
-    return False
+    @classmethod
+    def _translate_version_spec(cls, spec: VersionSpec) -> str:
+        if spec.is_version:
+            return f'"{spec.value}"'
+        else:
+            raise NotImplementedError

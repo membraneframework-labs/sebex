@@ -96,5 +96,5 @@ class LanguageSupport(ABC):
     def analyze(self, project: ProjectHandle) -> AnalysisEntry: ...
 
     @abstractmethod
-    def write_release(self, to_version: Version, to_version_span: Span,
+    def write_release(self, project: ProjectHandle, to_version: Version, to_version_span: Span,
                       dependency_updates: List[DependencyUpdate]): ...

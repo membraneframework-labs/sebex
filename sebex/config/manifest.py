@@ -32,6 +32,14 @@ class RepositoryHandle:
     def git(self) -> GitRepo:
         return GitRepo(self.location)
 
+    def is_tracked(self, file: Path) -> bool:
+        return file.resolve() in ((self.location / line).resolve()
+                                  for line in self.git.git.ls_files().split('\n'))
+
+    def is_changed(self, file: Path) -> bool:
+        return file.resolve() in ((self.location / item.a_path).resolve()
+                                  for item in self.git.index.diff(None))
+
     def __str__(self):
         return self.name
 

@@ -5,7 +5,7 @@ from git import Head
 from sebex.languages import language_support_for
 from sebex.log import fatal, warn, operation
 from sebex.release.executor.types import Task, Action
-from sebex.release.executor.util import release_branch_name
+from sebex.edit.git import release_branch_name
 from sebex.release.state import ReleaseStage, ReleaseState
 
 
@@ -44,9 +44,10 @@ class OpenReleaseBranch(Task):
 
         with operation('Modifying project files'):
             language_support_for(self.project.language).write_release(
+                self.project.project,
                 self.project.to_version,
                 self.project.version_span,
                 self.project.dependency_updates,
             )
 
-        raise NotImplementedError
+        return Action.PROCEED

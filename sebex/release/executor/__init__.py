@@ -46,8 +46,8 @@ def proceed(release: ReleaseState) -> Action:
 
                 with operation(task.human_name) as reporter:
                     action = task.run(release)
-                    proj.stage = next_stage
                     reporter(action.report())
+                    proj.stage = next_stage
 
                     if action == Action.BREAKPOINT:
                         hit_breakpoint = True
