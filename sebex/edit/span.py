@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, ClassVar
+from typing import Dict, ClassVar, Tuple
 
 
 @dataclass(order=True, frozen=True)
@@ -10,6 +10,14 @@ class Span:
     end_column: int
 
     ZERO: ClassVar['Span']
+
+    @property
+    def start(self) -> Tuple[int, int]:
+        return self.start_line, self.start_column
+
+    @property
+    def end(self) -> Tuple[int, int]:
+        return self.end_line, self.end_column
 
     def to_raw(self) -> Dict:
         return {
