@@ -1,11 +1,9 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Dict
 
 from sebex.analysis.version import Version, VersionSpec
-from sebex.config import ProjectHandle
-from sebex.edit import Span
+from sebex.edit.span import Span
 
 
 class Language(Enum):
@@ -81,20 +79,3 @@ class DependencyUpdate:
             to_spec=VersionSpec.from_raw(raw['to_spec']),
             to_spec_span=Span.from_raw(raw['to_spec_span']),
         )
-
-
-class LanguageSupport(ABC):
-    @classmethod
-    @abstractmethod
-    def language(cls) -> Language: ...
-
-    @classmethod
-    @abstractmethod
-    def test_project(cls, project: ProjectHandle) -> bool: ...
-
-    @abstractmethod
-    def analyze(self, project: ProjectHandle) -> AnalysisEntry: ...
-
-    @abstractmethod
-    def write_release(self, project: ProjectHandle, to_version: Version, to_version_span: Span,
-                      dependency_updates: List[DependencyUpdate]): ...

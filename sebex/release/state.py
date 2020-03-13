@@ -7,12 +7,15 @@ from typing import List, Iterator, Collection, Iterable, Dict, Tuple
 
 import click
 
-from sebex.analysis import Version, AnalysisDatabase, DependentsGraph, Language, DependencyUpdate, \
-    Bump, UnsolvableBump, VersionRequirement, Dependency, VersionSpec
+from sebex.analysis.database import AnalysisDatabase
+from sebex.analysis.graph import DependentsGraph
+from sebex.analysis.model import Dependency, Language, DependencyUpdate
+from sebex.analysis.version import Bump, VersionRequirement, VersionSpec, Version, UnsolvableBump
 from sebex.checksum import Checksum, Checksumable
-from sebex.config import ProjectHandle, ConfigFile
+from sebex.config.file import ConfigFile
 from sebex.config.format import Format, YamlFormat
-from sebex.edit import Span
+from sebex.config.manifest import ProjectHandle
+from sebex.edit.span import Span
 from sebex.log import operation, error, warn
 
 

@@ -1,11 +1,13 @@
 import pytest
 
-from analysis.mock_database import chain_db, triangle_db
-from sebex.analysis import DependentsGraph, Version, Language, VersionSpec, DependencyUpdate
+from sebex.analysis.graph import DependentsGraph
+from sebex.analysis.model import Language, DependencyUpdate
+from sebex.analysis.version import Version, VersionSpec
 from sebex.checksum import Checksum
-from sebex.config import ProjectHandle
-from sebex.edit import Span
-from sebex.release import ReleaseState, PhaseState, ProjectState, ReleaseStage
+from sebex.config.manifest import ProjectHandle
+from sebex.edit.span import Span
+from sebex.release.state import ReleaseState, PhaseState, ProjectState, ReleaseStage
+from tests.analysis.mock_database import chain_db, triangle_db
 
 
 def test_petname_deterministic():

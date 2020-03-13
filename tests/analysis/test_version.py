@@ -1,6 +1,6 @@
 import pytest
 
-from sebex.analysis import VersionRequirement, Version, VersionSpec
+from sebex.analysis.version import VersionRequirement, Version, VersionSpec
 
 
 @pytest.mark.parametrize('requirement_str, version_str, expected', [

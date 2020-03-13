@@ -1,6 +1,7 @@
 import pytest
 
-from sebex.edit import patch_str, Span
+from sebex.edit.patch import patch_str
+from sebex.edit.span import Span
 
 
 @pytest.mark.parametrize('original, patches, expected', [

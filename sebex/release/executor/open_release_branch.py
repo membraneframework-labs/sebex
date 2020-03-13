@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 from git import Head
 
-from sebex.languages import language_support_for
+from sebex.language import language_support_for
 from sebex.log import fatal, warn, operation
 from sebex.release.executor.types import Task, Action
-from sebex.edit.git import release_branch_name
+from sebex.release.git import release_branch_name
 from sebex.release.state import ReleaseStage, ReleaseState
 
 

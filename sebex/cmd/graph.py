@@ -1,6 +1,6 @@
 import click
 
-from sebex.analysis import analyze
+from sebex.analysis.state import analyze
 
 
 @click.command()

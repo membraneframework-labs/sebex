@@ -1,11 +1,11 @@
 from collections import defaultdict
-from typing import Dict, Optional, Callable, Tuple, Union
+from typing import Dict, Optional, Callable
 
-from sebex.analysis import AnalysisDatabase
-from sebex.analysis import Language, AnalysisEntry, Version, Dependency, VersionSpec
-from sebex.analysis.database import _Projects
-from sebex.config import ProjectHandle
-from sebex.edit import Span
+from sebex.analysis.database import _Projects, AnalysisDatabase
+from sebex.analysis.model import Dependency, Language, AnalysisEntry
+from sebex.analysis.version import Version, VersionSpec
+from sebex.config.manifest import ProjectHandle
+from sebex.edit.span import Span
 
 
 class MockAnalysisDatabase(AnalysisDatabase):

@@ -1,16 +1,20 @@
 from typing import List, Type
 
-from sebex.analysis.types import LanguageSupport, Language
-from sebex.config import ProjectHandle
-from sebex.languages.elixir import ElixirLanguageSupport
+from sebex.analysis.model import Language
+from sebex.language.abc import LanguageSupport
+from sebex.config.manifest import ProjectHandle
 
-ALL_LANGUAGES: List[Type[LanguageSupport]] = [
-    ElixirLanguageSupport
-]
+
+def all_languages() -> List[Type[LanguageSupport]]:
+    from sebex.language.elixir import ElixirLanguageSupport
+
+    return [
+        ElixirLanguageSupport,
+    ]
 
 
 def detect_language(project: ProjectHandle) -> Language:
-    for support in ALL_LANGUAGES:
+    for support in all_languages():
         if support.test_project(project):
             return support.language()
 
@@ -18,7 +22,7 @@ def detect_language(project: ProjectHandle) -> Language:
 
 
 def language_support_for(language: Language) -> LanguageSupport:
-    for support in ALL_LANGUAGES:
+    for support in all_languages():
         if support.language() == language:
             return support()
 

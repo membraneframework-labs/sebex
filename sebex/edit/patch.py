@@ -3,7 +3,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Tuple, Iterable, TextIO, Iterator, Dict, Optional
 
-from sebex.edit import Span
+from sebex.edit.span import Span
 
 Patch = Tuple[Span, str]
 Point = Tuple[int, int]

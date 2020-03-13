@@ -1,10 +1,11 @@
 import pytest
 
-from sebex.analysis import Language, Version, VersionSpec, VersionRequirement, DependentsGraph, \
-    AnalysisEntry, Dependency
-from sebex.config import ProjectHandle
-from sebex.edit import Span
-from .mock_database import MockAnalysisDatabase, triangle_db, stupid_db
+from sebex.analysis.graph import DependentsGraph
+from sebex.analysis.model import Language, AnalysisEntry, Dependency
+from sebex.analysis.version import Version, VersionSpec, VersionRequirement
+from sebex.config.manifest import ProjectHandle
+from sebex.edit.span import Span
+from tests.analysis.mock_database import MockAnalysisDatabase, triangle_db, stupid_db
 
 
 def test_builds_empty_database():

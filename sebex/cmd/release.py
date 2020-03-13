@@ -1,10 +1,12 @@
 import click
 
-from sebex.analysis import Version, analyze
+from sebex.analysis.state import analyze
+from sebex.analysis.version import Version
 from sebex.cli import PROJECT, VERSION, confirm
-from sebex.config import ProjectHandle
+from sebex.config.manifest import ProjectHandle
 from sebex.log import success, log, fatal, operation, warn
-from sebex.release import ReleaseState, executor
+from sebex.release.executor import Action, plan as execute_plan, proceed as proceed_plan
+from sebex.release.state import ReleaseState
 
 
 @click.group()
@@ -70,14 +72,14 @@ def proceed(dry: bool):
 
     rel = ReleaseState.open()
     if dry:
-        for task in executor.plan(rel):
+        for task in execute_plan(rel):
             log(f'{task.project.project}: {task.human_name}')
     else:
         with operation('Proceeding release'):
             with rel.transaction():
-                action = executor.proceed(rel)
+                action = proceed_plan(rel)
 
-        if action == executor.Action.FINISH:
+        if action == Action.FINISH:
             if rel.is_done():
                 success('Release finished successfully!')
 
@@ -86,6 +88,6 @@ def proceed(dry: bool):
             else:
                 success(f'The phase "{rel.current_phase().codename()}" has finished successfully!')
                 warn('To proceed, rerun this command.')
-        elif action == executor.Action.BREAKPOINT:
+        elif action == Action.BREAKPOINT:
             warn('A breakpoint has been reached!')
             warn('Do necessary manual actions and go back here by rerunning this command.')

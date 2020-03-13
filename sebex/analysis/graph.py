@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Set
 
 from graphviz import Digraph
 
-from sebex.analysis.types import Dependency
+from sebex.analysis.model import Dependency
 from sebex.analysis.database import AnalysisDatabase
-from sebex.config import ProjectHandle
+from sebex.config.manifest import ProjectHandle
 from sebex.log import operation
 
 _Edges = Dict[str, Dependency]

@@ -1,7 +1,8 @@
 import click
 from git import Repo
 
-from sebex.config import current_repositories, RepositoryManifest
+from sebex.config.manifest import RepositoryManifest
+from sebex.config.profile import current_repositories
 from sebex.jobs import for_each
 from sebex.log import error, success, operation
 

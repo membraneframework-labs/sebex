@@ -2,15 +2,16 @@ import json
 from pathlib import Path
 from typing import List
 
-from sebex.analysis.types import AnalysisEntry, Dependency, Release, Language, LanguageSupport, \
-    DependencyUpdate
+from sebex.analysis.model import AnalysisEntry, Dependency, Release, Language, DependencyUpdate
+from sebex.language.abc import LanguageSupport
 from sebex.analysis.version import VersionSpec, Version
-from sebex.config import ProjectHandle
+from sebex.config.manifest import ProjectHandle
 from sebex.context import Context
-from sebex.edit import Span, patch_file
-from sebex.edit.git import commit
+from sebex.edit.patch import patch_file
+from sebex.edit.span import Span
 from sebex.log import operation
 from sebex.popen import popen
+from sebex.release.git import commit
 
 
 def mix_file(project: ProjectHandle) -> Path:

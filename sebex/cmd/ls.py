@@ -1,6 +1,6 @@
 import click
 
-from sebex.config import current_repository_handles, current_project_handles
+from sebex.config.profile import current_project_handles, current_repository_handles
 
 
 @click.command()

@@ -1,7 +1,7 @@
 import click
 
-from sebex.analysis import Version
-from sebex.config import ProjectHandle, Manifest
+from sebex.analysis.version import Version
+from sebex.config.manifest import ProjectHandle, Manifest
 from sebex.context import Context
 
 

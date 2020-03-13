@@ -3,7 +3,7 @@ from typing import Optional
 
 import click
 
-from sebex.config import Manifest, RepositoryManifest
+from sebex.config.manifest import Manifest, RepositoryManifest
 from sebex.context import Context
 
 

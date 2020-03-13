@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, Iterable, Tuple
 
-from sebex.analysis.types import Language, AnalysisError, AnalysisEntry
-from sebex.config import ProjectHandle
+from sebex.analysis.model import Language, AnalysisError, AnalysisEntry
+from sebex.config.manifest import ProjectHandle
 from sebex.jobs import for_each
-from sebex.languages import detect_language, language_support_for
+from sebex.language import detect_language, language_support_for
 from sebex.log import operation
 
 _Projects = Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
