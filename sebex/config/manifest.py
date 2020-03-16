@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Dict, Union, Iterable, List, Optional
+from typing import Dict, Union, Iterable, List, Optional
 
 from git import Repo as GitRepo
 from github import Repository as GithubRepository
@@ -96,7 +96,8 @@ class ProjectHandle:
             return str(self.repo)
 
 
-class ProjectManifest(NamedTuple):
+@dataclass(frozen=True)
+class ProjectManifest:
     path: Path = Path('.')
 
     @property
@@ -111,10 +112,12 @@ class ProjectManifest(NamedTuple):
         return ProjectManifest(path=Path(raw['path']))
 
 
-class RepositoryManifest(NamedTuple):
+@dataclass(frozen=True)
+class RepositoryManifest:
     name: str
     remote_url: str
     projects: List[ProjectManifest]
+    default_branch: str = 'master'
 
     @property
     def handle(self) -> RepositoryHandle:
@@ -149,17 +152,21 @@ class RepositoryManifest(NamedTuple):
         if not (len(self.projects) == 1 and self.projects[0].is_root):
             d['projects'] = [ProjectManifest.to_raw(p) for p in self.projects]
 
+        if self.default_branch != 'master':
+            d['default_branch'] = self.default_branch
+
         return d
 
     @staticmethod
     def from_raw(raw: Dict) -> 'RepositoryManifest':
         projects = [ProjectManifest.from_raw(r) for r in raw.get('projects', [{'path': '.'}])]
-        return RepositoryManifest(name=raw['name'], remote_url=raw['remote_url'], projects=projects)
+        return RepositoryManifest(name=raw['name'], remote_url=raw['remote_url'], projects=projects,
+                                  default_branch=raw.get('default_branch', 'master'))
 
     @staticmethod
     def from_github_repository(repo: GithubRepository) -> 'RepositoryManifest':
         return RepositoryManifest(name=repo.name, remote_url=repo.ssh_url,
-                                  projects=[ProjectManifest()])
+                                  projects=[ProjectManifest()], default_branch=repo.default_branch)
 
 
 class Manifest(ConfigFile):

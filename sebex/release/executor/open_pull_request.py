@@ -19,7 +19,8 @@ class OpenPullRequest(Task):
 
     def run(self, release: ReleaseState) -> Action:
         git = self.project.project.repo.git
-        github = Manifest.open().get_repository_by_name(self.project.project.repo).github
+        manifest = Manifest.open().get_repository_by_name(self.project.project.repo)
+        github = manifest.github
         branch_name = release_branch_name(self.project)
 
         with operation(f'Pushing branch {branch_name} to remote repository'):
@@ -31,14 +32,14 @@ class OpenPullRequest(Task):
                 else:
                     raise
 
-        pr = find_release_pull_request(self.project, github)
+        pr = find_release_pull_request(self.project, manifest, github)
         if pr is not None:
             log('Pull request already opened:', pr.html_url)
             return Action.SKIP
 
         pr = github.create_pull(
             title=pull_request_title(self.project),
-            head=branch_name, base=github.default_branch,
+            head=branch_name, base=manifest.default_branch,
             body=self._pull_request_body(release),
         )
 

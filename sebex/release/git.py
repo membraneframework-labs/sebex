@@ -5,7 +5,7 @@ import click
 from github import Repository as GithubRepository
 from github.PullRequest import PullRequest
 
-from sebex.config.manifest import RepositoryHandle
+from sebex.config.manifest import RepositoryHandle, RepositoryManifest
 from sebex.log import log
 from sebex.release.state import ProjectState
 
@@ -26,11 +26,12 @@ def pull_request_title(project: ProjectState) -> str:
 
 def find_release_pull_request(
     project: ProjectState,
+    manifest: RepositoryManifest,
     repo: GithubRepository,
     **filters
 ) -> Optional[PullRequest]:
     pulls = repo.get_pulls(
-        base=repo.default_branch,
+        base=manifest.default_branch,
         head=f'{repo.owner.login}:{release_branch_name(project)}',
         **{'state': 'open', 'sort': 'created', 'direction': 'desc', **filters},
     )

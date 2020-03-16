@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from git import Head
 
+from sebex.config.manifest import Manifest
 from sebex.language import language_support_for
 from sebex.log import fatal, warn, operation
 from sebex.release.executor.types import Task, Action
@@ -17,6 +18,7 @@ class OpenReleaseBranch(Task):
 
     def run(self, release: ReleaseState) -> Action:
         git = self.project.project.repo.git
+        manifest = Manifest.open().get_repository_by_name(self.project.project.repo)
         branch_name = release_branch_name(self.project)
 
         with operation(f'Checking out branch {branch_name}'):
@@ -29,8 +31,9 @@ class OpenReleaseBranch(Task):
                           'Remove both branches before releasing.')
                 else:
                     if git.active_branch.name == branch_name:
-                        warn('Checking out master before creating release branch')
-                        git.git.checkout('master')
+                        warn('Checking out', manifest.default_branch,
+                             'before creating release branch')
+                        git.git.checkout(manifest.default_branch)
 
                     warn('Deleting existing branch', branch_name)
                     Head.delete(git, branch_name, force=True)

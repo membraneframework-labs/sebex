@@ -25,6 +25,7 @@ class ReleaseStage(Enum):
     BRANCH_OPENED = 'branch_opened'
     PULL_REQUEST_OPENED = 'pull_request_opened'
     PULL_REQUEST_MERGED = 'pull_request_merged'
+    BRANCH_CLOSED = 'branch_closed'
     PUBLISHED = 'published'
     DONE = 'done'
 
