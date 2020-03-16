@@ -52,7 +52,7 @@ def proceed(release: ReleaseState) -> Action:
                     if action == Action.BREAKPOINT:
                         hit_breakpoint = True
 
-                    if action != Action.PROCEED:
+                    if action not in (Action.PROCEED, Action.SKIP):
                         break
 
     if hit_breakpoint:

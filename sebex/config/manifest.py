@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple, Dict, Union, Iterable, List, Optional
@@ -7,6 +8,8 @@ from github import Repository as GithubRepository
 
 from sebex.config.file import ConfigFile
 from sebex.context import Context
+
+_GITHUB_SSH_URL = re.compile(r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
 
 
 @dataclass(order=True, unsafe_hash=True)
@@ -132,6 +135,14 @@ class RepositoryManifest(NamedTuple):
     def location(self) -> Path:
         return self.handle.location
 
+    @property
+    def github(self) -> GithubRepository:
+        m = _GITHUB_SSH_URL.match(self.remote_url)
+        if m:
+            return Context.current().github.get_repo(m['full'], lazy=True)
+        else:
+            raise ValueError('Repository is not hosted on GitHub')
+
     def to_raw(self) -> Dict:
         d = {'name': self.name, 'remote_url': self.remote_url}
 
@@ -172,8 +183,10 @@ class Manifest(ConfigFile):
 
         return repo
 
-    def find_repository_by_name(self, name: Union[str, RepositoryHandle]) -> \
-            Optional[RepositoryManifest]:
+    def find_repository_by_name(
+        self,
+        name: Union[str, RepositoryHandle]
+    ) -> Optional[RepositoryManifest]:
         name = str(name)
 
         if name not in self._repository_index:

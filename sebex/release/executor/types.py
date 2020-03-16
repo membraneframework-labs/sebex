@@ -11,12 +11,15 @@ from sebex.release.state import ProjectState, ReleaseStage, ReleaseState
 
 class Action(Enum):
     PROCEED = auto()
+    SKIP = auto()
     BREAKPOINT = auto()
     FINISH = auto()
 
     def report(self) -> Optional[str]:
         if self == self.PROCEED:
             return None
+        elif self == self.SKIP:
+            return click.style('SKIPPED', fg='yellow')
         elif self == self.BREAKPOINT:
             return click.style('BREAKPOINT', fg='yellow')
         elif self == self.FINISH:
