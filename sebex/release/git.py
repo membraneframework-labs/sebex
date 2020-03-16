@@ -31,7 +31,7 @@ def find_release_pull_request(
 ) -> Optional[PullRequest]:
     pulls = repo.get_pulls(
         base=repo.default_branch,
-        head=f'{repo.owner.login}:{release_branch_name(project)}', state='open',
-        sort='created', direction='desc', **filters
+        head=f'{repo.owner.login}:{release_branch_name(project)}',
+        **{'state': 'open', 'sort': 'created', 'direction': 'desc', **filters},
     )
     return next(iter(pulls), None)

@@ -47,12 +47,13 @@ def proceed(release: ReleaseState) -> Action:
                 with operation(task.human_name) as reporter:
                     action = task.run(release)
                     reporter(action.report())
-                    proj.stage = next_stage
 
-                    if action == Action.BREAKPOINT:
+                    if action in (Action.PROCEED, Action.SKIP):
+                        proj.stage = next_stage
+                    elif action == Action.BREAKPOINT:
                         hit_breakpoint = True
-
-                    if action not in (Action.PROCEED, Action.SKIP):
+                        break
+                    elif action == Action.FINISH:
                         break
 
     if hit_breakpoint:
