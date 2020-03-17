@@ -1,16 +1,16 @@
 import json
 import os
+from importlib import resources
 from pathlib import Path
 from typing import List
 
 from sebex.analysis.model import AnalysisEntry, Dependency, Release, Language, DependencyUpdate
-from sebex.cli import confirm
-from sebex.language.abc import LanguageSupport
 from sebex.analysis.version import VersionSpec, Version
+from sebex.cli import confirm
 from sebex.config.manifest import ProjectHandle
-from sebex.context import Context
 from sebex.edit.patch import patch_file
 from sebex.edit.span import Span
+from sebex.language.abc import LanguageSupport
 from sebex.log import operation, warn, fatal
 from sebex.popen import popen
 from sebex.release.git import commit
@@ -34,8 +34,9 @@ class ElixirLanguageSupport(LanguageSupport):
         return mix_file(project).exists()
 
     def analyze(self, project: ProjectHandle) -> AnalysisEntry:
-        proc = popen(Context.current().elixir_analyzer, ['--mix', mix_file(project)])
-        raw = json.loads(proc.stdout)
+        with resources.path(__name__, 'elixir_analyzer') as elixir_analyzer:
+            proc = popen(elixir_analyzer, ['--mix', mix_file(project)])
+            raw = json.loads(proc.stdout)
 
         package = raw['package']
         version = Version.parse(raw['version'])

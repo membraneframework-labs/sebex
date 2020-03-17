@@ -5,3 +5,4 @@ __pycache__/
 *.iml
 .env
 /tmp/
+/sebex/language/elixir/elixir_analyzer

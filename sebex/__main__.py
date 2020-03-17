@@ -1,16 +1,16 @@
 import os
 
 import click
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-from . import __version__
-from .cmd.bootstrap import bootstrap
-from .cmd.graph import graph
-from .cmd.ls import ls
-from .cmd.release import release
-from .cmd.sync import sync
-from .context import Context
-from .log import FatalError
+from sebex.__about__ import __title__, __version__
+from sebex.cmd.bootstrap import bootstrap
+from sebex.cmd.graph import graph
+from sebex.cmd.ls import ls
+from sebex.cmd.release import release
+from sebex.cmd.sync import sync
+from sebex.context import Context
+from sebex.log import FatalError, warn
 
 
 @click.group()
@@ -27,9 +27,6 @@ from .log import FatalError
               help='Set number of parallel running jobs.')
 @click.option('--github_access_token', required=True, show_envvar=True, metavar='TOKEN',
               help='Github private access token.')
-@click.option('--elixir-analyzer', type=click.Path(exists=True, file_okay=True, dir_okay=False),
-              default='sebex_elixir_analyzer', required=True, show_default=True, show_envvar=True,
-              metavar='PATH', help='Path to the Sebex ElixirAnalyzer executable.')
 def cli(**kwargs):
     Context.initial(**kwargs)
 
@@ -40,9 +37,18 @@ cli.add_command(ls)
 cli.add_command(release)
 cli.add_command(sync)
 
-if __name__ == '__main__':
+
+def main():
     try:
-        load_dotenv()
-        cli(auto_envvar_prefix='SEBEX')
+        try:
+            load_dotenv(find_dotenv(usecwd=True))
+        except Exception as e:
+            warn('Failed to find and load .env:', e)
+
+        cli(auto_envvar_prefix=__title__.upper())
     except FatalError:
         pass
+
+
+if __name__ == '__main__':
+    main()
