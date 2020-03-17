@@ -11,4 +11,4 @@ class Cleanup(Task):
         return ReleaseStage.DONE
 
     def run(self, release: ReleaseState) -> Action:
-        raise NotImplementedError
+        return Action.PROCEED

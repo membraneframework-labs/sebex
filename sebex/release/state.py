@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import total_ordering
 from textwrap import indent
-from typing import List, Iterator, Collection, Iterable, Dict, Tuple
+from typing import List, Iterator, Collection, Iterable, Dict, Tuple, Optional
 
 import click
 
@@ -366,6 +366,7 @@ class ProjectState(Checksumable):
     to_version: Version
     version_span: Span
     language: Language
+    publish: bool = False
     dependency_updates: List[DependencyUpdate] = field(default_factory=list)
     stage: ReleaseStage = ReleaseStage.CLEAN
 
@@ -386,6 +387,9 @@ class ProjectState(Checksumable):
             f'{project_name}',
             f'{from_version} -> {to_version}',
         ]
+
+        if self.publish:
+            headline.append('publish')
 
         if self.stage.describe():
             headline.append(self.stage.describe())
@@ -416,6 +420,7 @@ class ProjectState(Checksumable):
             to_version=about.version,
             version_span=about.version_span,
             language=db.language(project),
+            publish=about.is_published,
         )
 
     def checksum(self, hasher):
@@ -432,6 +437,7 @@ class ProjectState(Checksumable):
             'from_version': str(self.from_version),
             'to_version': str(self.to_version),
             'version_span': self.version_span.to_raw(),
+            'publish': self.publish,
         }
 
         if self.dependency_updates:
@@ -447,6 +453,7 @@ class ProjectState(Checksumable):
             to_version=Version.parse(o['to_version']),
             version_span=Span.from_raw(o['version_span']),
             language=Language(o['language']),
+            publish=o['publish'],
             dependency_updates=[DependencyUpdate.from_raw(d)
                                 for d in o.get('dependency_updates', [])],
             stage=ReleaseStage(o['stage']),

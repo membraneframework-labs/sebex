@@ -1,15 +1,17 @@
 import json
+import os
 from pathlib import Path
 from typing import List
 
 from sebex.analysis.model import AnalysisEntry, Dependency, Release, Language, DependencyUpdate
+from sebex.cli import confirm
 from sebex.language.abc import LanguageSupport
 from sebex.analysis.version import VersionSpec, Version
 from sebex.config.manifest import ProjectHandle
 from sebex.context import Context
 from sebex.edit.patch import patch_file
 from sebex.edit.span import Span
-from sebex.log import operation
+from sebex.log import operation, warn, fatal
 from sebex.popen import popen
 from sebex.release.git import commit
 
@@ -79,6 +81,28 @@ class ElixirLanguageSupport(LanguageSupport):
                 popen('mix', ['deps.update', '--all'], log_stdout=True, cwd=project.location)
                 if project.repo.is_changed(mix_lock(project)):
                     commit(project.repo, 'update lockfile', [mix_lock(project)])
+
+    def publish(self, project: ProjectHandle) -> bool:
+        if not os.getenv('HEX_API_KEY'):
+            warn('The HEX_API_KEY environment variable seems not to be set.',
+                 'Mix will probably be unable to authenticate and will fail.',
+                 'To generate API key, run this command: mix hex.user key generate')
+
+        with operation('Dry run'):
+            popen('mix', ['hex.publish', '--yes', '--dry-run'], log_stdout=True,
+                  cwd=project.location)
+
+        if not confirm('Please review dry run logs, proceed'):
+            return False
+
+        with operation('Publishing for real'):
+            proc = popen('mix', ['hex.publish', '--yes'], log_stdout=True, cwd=project.location)
+
+            # https://github.com/hexpm/hex/blob/3362c4abea51525d6c435ebb30bacfa603e0213a/lib/mix/tasks/hex.publish.ex#L536
+            if 'Package published to ' in proc.stdout:
+                return True
+            else:
+                fatal('Failed to publish Hex package')
 
     @classmethod
     def _translate_version_spec(cls, spec: VersionSpec) -> str:

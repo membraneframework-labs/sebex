@@ -22,3 +22,6 @@ class LanguageSupport(ABC):
     @abstractmethod
     def write_release(self, project: ProjectHandle, to_version: Version, to_version_span: Span,
                       dependency_updates: List[DependencyUpdate]): ...
+
+    @abstractmethod
+    def publish(self, project: ProjectHandle) -> bool: ...
