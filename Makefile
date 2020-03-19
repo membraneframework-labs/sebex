@@ -1,11 +1,9 @@
-.PHONY: all install clean
+.PHONY: install clean
 
-all: setup.py
-
-install: all
+install: sebex/language/elixir/elixir_analyzer
 	pip install --user .
 
-setup.py: Pipfile sebex/language/elixir/elixir_analyzer
+setup.py: Pipfile
 	pipenv-setup sync -p
 
 sebex/language/elixir/elixir_analyzer:
