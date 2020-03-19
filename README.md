@@ -20,7 +20,7 @@ To update your existing installation, invoke `make install` again.
 
 ## Development
 
-We use [Pipenv] to manage a virtual environment, which is based on **Python 3.7**. To synchronize installation requirements from `Pipfile` to `setup.py` run `make setup.py` inside `pipenv shell`.
+We use [Pipenv] to manage a virtual environment, which is based on **Python 3.7**. Run `pipenv install --dev` to install all dependencies. To synchronize installation requirements from `Pipfile` to `setup.py` run `make setup.py` inside `pipenv shell`.
 
 Python tests are run using pytest, run `pytest` inside `pipenv shell` to execute them. To run Elixir analyzer test, run `mix test` within its directory.
 
