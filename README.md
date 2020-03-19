@@ -1,6 +1,22 @@
 # Sebex
 
-The ultimate assistant in [Membrane Framework]() releasing & development.
+The ultimate assistant in [Membrane Framework] releasing & development.
+
+## Installation
+
+Sebex is a Python application and is officially supported on Linux and macOS systems. At least **Python 3.7** is required. There is also Elixir analysis code, which is written in Elixir itself and distributed as an _escript_. For this to work, a reasonably fresh **Erlang** installation is also needed.
+
+Currently, building and installation directly from source code is the recommended way. We use [Pipenv] to manage virtual environments and the whole procedure is scripted using a makefile:
+
+```bash
+git clone https://github.com/membraneframework/sebex.git
+make
+make install
+```
+
+Under the hood this will build Elixir analyzer script, update installation requirements in `setup.py` according to ones specified in `Pipfile` and then, it will install `sebex` package issuing `pip install --user .` command.
+
+To update your existing installation, invoke `make install` again.
 
 ## Support and questions
 
@@ -16,3 +32,4 @@ https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane)
 Licensed under the [Apache License, Version 2.0](LICENSE)
 
 [Membrane Framework]: https://www.membraneframework.org/
+[Pipenv]: https://pipenv.pypa.io/en/latest/
