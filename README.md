@@ -11,6 +11,7 @@ Currently, building and installation directly from source code is the recommende
 ```bash
 git clone https://github.com/membraneframework/sebex.git
 cd sebex
+pipenv install
 make
 make install
 ```
