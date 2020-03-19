@@ -10,7 +10,7 @@ setup.py: Pipfile sebex/language/elixir/elixir_analyzer
 
 sebex/language/elixir/elixir_analyzer:
 	cd sebex_elixir_analyzer \
-		&& MIX_ENV=prod mix escript.build \
+		&& MIX_ENV=prod mix do deps.get, escript.build \
 		&& mv sebex_elixir_analyzer ../sebex/language/elixir/elixir_analyzer
 
 clean:
