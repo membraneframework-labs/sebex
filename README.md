@@ -20,9 +20,9 @@ To update your existing installation, invoke `make install` again.
 
 ## Development
 
-We use [Pipenv] to manage a virtual environment, which is based on **Python 3.7**. Run `pipenv install --dev` to install all dependencies. To synchronize installation requirements from `Pipfile` to `setup.py` run `make setup.py` inside `pipenv shell`.
+We use [Poetry] to manage a dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build`.
 
-Python tests are run using pytest, run `pytest` inside `pipenv shell` to execute them. To run Elixir analyzer test, run `mix test` within its directory.
+Python tests are run using pytest, run `pytest` inside `poetry shell` to execute them. To run Elixir analyzer test, run `mix test` within its directory.
 
 ## Support and questions
 
@@ -38,4 +38,4 @@ https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane)
 Licensed under the [Apache License, Version 2.0](LICENSE.txt)
 
 [Membrane Framework]: https://www.membraneframework.org/
-[Pipenv]: https://pipenv.pypa.io/en/latest/
+[Poetry]: https://python-poetry.org

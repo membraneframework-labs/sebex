@@ -1,10 +1,10 @@
-.PHONY: install clean
+.PHONY: build install clean
 
-install: sebex/language/elixir/elixir_analyzer
-	pip install --user .
+build: sebex/language/elixir/elixir_analyzer
+	poetry build
 
-setup.py: Pipfile
-	pipenv-setup sync -p
+install: build
+	pip install .
 
 sebex/language/elixir/elixir_analyzer:
 	cd sebex_elixir_analyzer \

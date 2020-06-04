@@ -3,7 +3,11 @@ import os
 import click
 from dotenv import load_dotenv, find_dotenv
 
-from sebex.__about__ import __title__, __version__
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata
+
 from sebex.cmd.bootstrap import bootstrap
 from sebex.cmd.graph import graph
 from sebex.cmd.ls import ls
@@ -14,7 +18,7 @@ from sebex.log import FatalError, warn
 
 
 @click.group()
-@click.version_option(__version__)
+@click.version_option(metadata.version('sebex'))
 @click.option('-y', '--assumeyes', is_flag=True, help='Automatically answer yes for all questions.')
 @click.option('--workspace', type=click.Path(exists=True, file_okay=False, writable=True),
               default='.', required=True, show_default=True, show_envvar=True,
@@ -45,7 +49,7 @@ def main():
         except Exception as e:
             warn('Failed to find and load .env:', e)
 
-        cli(auto_envvar_prefix=__title__.upper())
+        cli(auto_envvar_prefix="SEBEX")
     except FatalError:
         pass
 

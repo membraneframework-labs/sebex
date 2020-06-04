@@ -4,5 +4,8 @@ __pycache__/
 /.idea/
 *.iml
 .env
+*.env
 /tmp/
 /sebex/language/elixir/elixir_analyzer
+*.egg-info/
+dist
