@@ -22,12 +22,11 @@ include = [
 sebex = "sebex.__main__:main"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 click = "^7.0"
 colorama = "*"
 gitpython = "^3.0"
 graphviz = "^0.13.0"
-importlib_metadata = { version = "^1.6.0", python = "<3.8" }
 petname = "^2.6"
 pygithub = "^1.47"
 python-dotenv = "^0.10.5"

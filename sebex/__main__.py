@@ -1,12 +1,8 @@
 import os
+from importlib import metadata
 
 import click
 from dotenv import load_dotenv, find_dotenv
-
-try:
-    from importlib import metadata
-except ImportError:
-    import importlib_metadata as metadata
 
 from sebex.cmd.bootstrap import bootstrap
 from sebex.cmd.graph import graph

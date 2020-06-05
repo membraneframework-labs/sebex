@@ -4,7 +4,7 @@ The ultimate assistant in [Membrane Framework] releasing & development.
 
 ## Installation
 
-Sebex is a Python application and is officially supported on Linux and macOS systems. At least **Python 3.7** is required. There is also Elixir analysis code, which is written in Elixir itself and distributed as an _escript_. For this to work, a reasonably fresh **Erlang** installation is also needed.
+Sebex is a Python application and is officially supported on Linux and macOS systems. At least **Python 3.8** is required. There is also Elixir analysis code, which is written in Elixir itself and distributed as an _escript_. For this to work, a reasonably fresh **Erlang** installation is also needed.
 
 Currently, building and installation directly from source code is the recommended way, and the whole procedure is scripted using a makefile:
 
