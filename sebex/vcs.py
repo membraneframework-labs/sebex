@@ -85,12 +85,12 @@ class Vcs:
 
         self.git.git.commit('-m', base_message)
 
-    def checkout(self, branch: str, ensure_clean: bool = True):
+    def checkout(self, branch: str, ensure_clean: bool = True, leave_remote: bool = False):
         with operation(f'Checking out branch {branch}'):
             # Clean existing (remote) branch if it exists
             if branch in (h.name for h in self.git.heads):
                 head: Head = next(h for h in self.git.heads if h.name == branch)
-                if head.tracking_branch() is not None:
+                if leave_remote and head.tracking_branch() is not None:
                     fatal(f'Branch {branch} is already created and',
                           f'it tracks a remote branch {head.tracking_branch()}.',
                           'Remove both branches before making changes.')

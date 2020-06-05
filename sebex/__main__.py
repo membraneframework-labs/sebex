@@ -5,6 +5,7 @@ import click
 from dotenv import load_dotenv, find_dotenv
 
 from sebex.cmd.bootstrap import bootstrap
+from sebex.cmd.foreach import foreach
 from sebex.cmd.graph import graph
 from sebex.cmd.ls import ls
 from sebex.cmd.release import release
@@ -32,6 +33,7 @@ def cli(**kwargs):
 
 
 cli.add_command(bootstrap)
+cli.add_command(foreach)
 cli.add_command(graph)
 cli.add_command(ls)
 cli.add_command(release)
