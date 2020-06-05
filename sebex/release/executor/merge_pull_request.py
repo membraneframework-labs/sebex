@@ -20,7 +20,7 @@ class MergePullRequest(Task):
     def run(self, release: ReleaseState) -> Action:
         manifest = Manifest.open().get_repository_by_name(self.project.project.repo)
         github = manifest.github
-        pr = find_release_pull_request(self.project, manifest, github, state='all')
+        pr = find_release_pull_request(self.project, state='all')
         if pr is None:
             raise AssertionError('At this stage, the pull request should already exist.')
 

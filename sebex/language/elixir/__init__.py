@@ -13,7 +13,6 @@ from sebex.edit.span import Span
 from sebex.language.abc import LanguageSupport
 from sebex.log import operation, warn, fatal
 from sebex.popen import popen
-from sebex.release.git import commit
 
 
 def mix_file(project: ProjectHandle) -> Path:
@@ -75,13 +74,13 @@ class ElixirLanguageSupport(LanguageSupport):
                   for dep in dependencies]
             ])
 
-            commit(project.repo, f'bump to {to_version}', [mix_file(project)])
+            project.repo.vcs.commit(f'bump to {to_version}', [mix_file(project)])
 
-        if project.repo.is_tracked(mix_lock(project)):
+        if project.repo.vcs.is_tracked(mix_lock(project)):
             with operation('Update lockfile'):
                 popen(['mix', 'deps.update', '--all'], log_stdout=True, cwd=project.location)
-                if project.repo.is_changed(mix_lock(project)):
-                    commit(project.repo, 'update lockfile', [mix_lock(project)])
+                if project.repo.vcs.is_changed(mix_lock(project)):
+                    project.repo.vcs.commit('update lockfile', [mix_lock(project)])
 
     def publish(self, project: ProjectHandle) -> bool:
         if not os.getenv('HEX_API_KEY'):

@@ -23,12 +23,9 @@ def sync(clone, fetch):
                 error('Repository is not cloned:', repo)
         else:
             if fetch:
-                with operation('Fetching', repo):
-                    repo.git.remote().fetch(refspec='refs/heads/*:refs/remotes/origin/*')
-                    repo.git.remote().fetch(refspec='refs/tags/*:refs/tags/*')
+                repo.vcs.pull()
             else:
-                with operation('Pulling', repo):
-                    repo.git.remote().pull()
+                repo.vcs.pull()
 
     repos = list(current_repositories())
     for_each(repos, do_sync, desc='Syncing', item_desc=lambda r: r.handle)

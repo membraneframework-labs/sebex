@@ -1,7 +1,8 @@
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
-from typing import Dict, Union, Iterable, List, Optional
+from typing import Dict, Union, Iterable, List, Optional, TYPE_CHECKING
 
 from git import Repo as GitRepo
 from github import Repository as GithubRepository
@@ -9,13 +10,14 @@ from github import Repository as GithubRepository
 from sebex.config.file import ConfigFile
 from sebex.context import Context
 
+if TYPE_CHECKING:
+    from sebex.vcs import Vcs
+
 _GITHUB_SSH_URL = re.compile(r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
 
 
 @dataclass(order=True, unsafe_hash=True)
 class RepositoryHandle:
-    __slots__ = ['name']
-
     name: str
 
     def __init__(self, name: Union[str, 'RepositoryHandle']):
@@ -31,17 +33,15 @@ class RepositoryHandle:
     def exists(self) -> bool:
         return self.location.exists()
 
+    @cached_property
+    def vcs(self) -> 'Vcs':
+        from sebex.vcs import Vcs
+        return Vcs(self)
+
+    # TODO Remove
     @property
     def git(self) -> GitRepo:
         return GitRepo(self.location)
-
-    def is_tracked(self, file: Path) -> bool:
-        return file.resolve() in ((self.location / line).resolve()
-                                  for line in self.git.git.ls_files().split('\n'))
-
-    def is_changed(self, file: Path) -> bool:
-        return file.resolve() in ((self.location / item.a_path).resolve()
-                                  for item in self.git.index.diff(None))
 
     def __str__(self):
         return self.name
@@ -138,6 +138,7 @@ class RepositoryManifest:
     def location(self) -> Path:
         return self.handle.location
 
+    # TODO Remove
     @property
     def github(self) -> GithubRepository:
         m = _GITHUB_SSH_URL.match(self.remote_url)
