@@ -1,14 +1,21 @@
 import subprocess
-from typing import List
+from typing import List, Union
 
 from sebex.log import logcontext, log, warn, error
 
 
-def popen(prog: str, args: List[str], log_stdout: bool = False,
+def popen(args: Union[str, List[str]], log_stdout: bool = False,
           **kwargs) -> subprocess.CompletedProcess:
-    with logcontext(prog):
+    if isinstance(args, str):
+        lc = args
+    else:
+        lc = args[0]
+
+    lc = lc[:12]
+
+    with logcontext(lc):
         try:
-            proc = subprocess.run([prog, *args], stdin=subprocess.DEVNULL, capture_output=True,
+            proc = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
                                   check=True, encoding='utf-8', **kwargs)
             if log_stdout:
                 for line in proc.stdout.splitlines():

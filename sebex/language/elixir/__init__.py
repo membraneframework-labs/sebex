@@ -35,7 +35,7 @@ class ElixirLanguageSupport(LanguageSupport):
 
     def analyze(self, project: ProjectHandle) -> AnalysisEntry:
         with resources.path(__name__, 'elixir_analyzer') as elixir_analyzer:
-            proc = popen(elixir_analyzer, ['--mix', mix_file(project)])
+            proc = popen([elixir_analyzer, '--mix', mix_file(project)])
             raw = json.loads(proc.stdout)
 
         package = raw['package']
@@ -79,7 +79,7 @@ class ElixirLanguageSupport(LanguageSupport):
 
         if project.repo.is_tracked(mix_lock(project)):
             with operation('Update lockfile'):
-                popen('mix', ['deps.update', '--all'], log_stdout=True, cwd=project.location)
+                popen(['mix', 'deps.update', '--all'], log_stdout=True, cwd=project.location)
                 if project.repo.is_changed(mix_lock(project)):
                     commit(project.repo, 'update lockfile', [mix_lock(project)])
 
@@ -90,14 +90,14 @@ class ElixirLanguageSupport(LanguageSupport):
                  'To generate API key, run this command: mix hex.user key generate')
 
         with operation('Dry run'):
-            popen('mix', ['hex.publish', '--yes', '--dry-run'], log_stdout=True,
+            popen(['mix', 'hex.publish', '--yes', '--dry-run'], log_stdout=True,
                   cwd=project.location)
 
         if not confirm('Please review dry run logs, proceed'):
             return False
 
         with operation('Publishing for real'):
-            proc = popen('mix', ['hex.publish', '--yes'], log_stdout=True, cwd=project.location)
+            proc = popen(['mix', 'hex.publish', '--yes'], log_stdout=True, cwd=project.location)
 
             # https://github.com/hexpm/hex/blob/3362c4abea51525d6c435ebb30bacfa603e0213a/lib/mix/tasks/hex.publish.ex#L536
             if 'Package published to ' in proc.stdout:
