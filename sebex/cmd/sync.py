@@ -23,7 +23,7 @@ def sync(clone, fetch):
                 error('Repository is not cloned:', repo)
         else:
             if fetch:
-                repo.vcs.pull()
+                repo.vcs.fetch()
             else:
                 repo.vcs.pull()
 
