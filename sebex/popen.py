@@ -1,17 +1,18 @@
 import subprocess
+from os import PathLike
 from typing import List, Union
 
 from sebex.log import logcontext, log, warn, error
 
 
-def popen(args: Union[str, List[str]], log_stdout: bool = False,
+def popen(args: Union[str, PathLike, List[str]], log_stdout: bool = False,
           **kwargs) -> subprocess.CompletedProcess:
     if isinstance(args, str):
         lc = args
     else:
         lc = args[0]
 
-    lc = lc[:12]
+    lc = str(lc)[:12]
 
     with logcontext(lc):
         try:
