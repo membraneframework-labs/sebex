@@ -1,11 +1,7 @@
 from dataclasses import dataclass
 
-from git import Head, GitCommandError
-
-from sebex.config.manifest import Manifest
-from sebex.log import operation
 from sebex.release.executor.types import Task, Action
-from sebex.release.git import release_branch_name
+from sebex.release.git import release_branch_name, release_tag_name
 from sebex.release.state import ReleaseStage, ReleaseState
 
 
@@ -16,28 +12,18 @@ class CloseReleaseBranch(Task):
         return ReleaseStage.BRANCH_CLOSED
 
     def run(self, release: ReleaseState) -> Action:
-        git = self.project.project.repo.git
-        manifest = Manifest.open().get_repository_by_name(self.project.project.repo)
-        branch_name = release_branch_name(self.project)
+        branch = release_branch_name(self.project)
+        tag = release_tag_name(self.project)
+        vcs = self.project.project.repo.vcs
 
-        with operation(f'Checking out & pulling {manifest.default_branch}'):
-            git.git.checkout(manifest.default_branch)
-            git.remote().fetch(refspec='refs/heads/*:refs/remotes/origin/*')
-            git.git.pull()
+        vcs.checkout(vcs.default_branch)
+        vcs.fetch()
+        vcs.pull()
 
-        with operation('Deleting remote release branch') as reporter:
-            try:
-                git.git.push(git.remote().name, '--delete', branch_name)
-            except GitCommandError as e:
-                if 'remote ref does not exist' in e.stderr:
-                    reporter(Action.SKIP.report())
-                else:
-                    raise
+        vcs.delete_remote_branch(branch)
+        vcs.delete_local_branch(branch)
 
-        with operation('Deleting local release branch') as reporter:
-            if next((h for h in git.heads if h.name == branch_name), None) is not None:
-                Head.delete(git, branch_name)
-            else:
-                reporter(Action.SKIP.report())
+        vcs.tag(tag)
+        vcs.push(tag=tag)
 
         return Action.PROCEED

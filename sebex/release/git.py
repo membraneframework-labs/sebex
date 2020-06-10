@@ -6,7 +6,11 @@ from sebex.release.state import ProjectState
 
 
 def release_branch_name(project: ProjectState) -> str:
-    return f'release/v{project.to_version}'
+    return f'release/{release_tag_name(project)}'
+
+
+def release_tag_name(project: ProjectState) -> str:
+    return f'v{project.to_version}'
 
 
 def pull_request_title(project: ProjectState) -> str:

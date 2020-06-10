@@ -16,7 +16,7 @@ class OpenReleaseBranch(Task):
     def run(self, release: ReleaseState) -> Action:
         branch_name = release_branch_name(self.project)
 
-        self.project.project.repo.vcs.checkout(branch_name)
+        self.project.project.repo.vcs.checkout(branch_name, delete_existing=True)
 
         with operation('Modifying project files'):
             language_support_for(self.project.language).write_release(

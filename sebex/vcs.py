@@ -20,6 +20,8 @@ _PR_MARKETING = r'''
 <sup>proudly automated with <a href="https://github.com/membraneframework/sebex">Sebex</a></sup>
 '''
 
+_SKIP = click.style('SKIPPED', fg='yellow')
+
 
 @dataclass
 class Vcs:
@@ -55,6 +57,10 @@ class Vcs:
     def active_branch(self) -> str:
         return self.git.active_branch.name
 
+    @property
+    def default_remote(self) -> str:
+        return self.git.remote().name
+
     def is_dirty(self) -> bool:
         return self.git.is_dirty()
 
@@ -65,6 +71,9 @@ class Vcs:
     def is_changed(self, file: Path) -> bool:
         return file.resolve() in ((self.location / item.a_path).resolve()
                                   for item in self.git.index.diff(None))
+
+    def branch_exists(self, branch: str) -> bool:
+        return branch in (h.name for h in self.git.heads)
 
     def fetch(self):
         with operation('Fetching', self.repo):
@@ -85,10 +94,13 @@ class Vcs:
 
         self.git.git.commit('-m', base_message)
 
-    def checkout(self, branch: str, ensure_clean: bool = True, leave_remote: bool = False):
+    def tag(self, tag: str, message=None):
+        self.git.create_tag(tag, message=message)
+
+    def checkout(self, branch: str, ensure_clean: bool = True, delete_existing: bool = False):
         with operation(f'Checking out branch {branch}'):
             # Clean existing (remote) branch if it exists
-            if leave_remote and branch in (h.name for h in self.git.heads):
+            if delete_existing and self.branch_exists(branch):
                 head: Head = next(h for h in self.git.heads if h.name == branch)
                 if head.tracking_branch() is not None:
                     fatal(f'Branch {branch} is already created and',
@@ -110,16 +122,38 @@ class Vcs:
 
             self.git.git.checkout('-b', branch)
 
-    def push(self, branch: str = None):
-        if not branch:
-            branch = self.active_branch
-
-        with operation(f'Pushing branch {branch} to remote repository'):
+    def push(self, branch: str = None, tag: str = None):
+        def do_push(*args):
             try:
-                self.git.git.push('-u', 'origin', branch)
+                self.git.git.push(*args)
             except GitCommandError as e:
                 if '[rejected]' in e.stderr and confirm('Push was rejected, try to force push?'):
-                    self.git.git.push('-f', '-u', 'origin', branch)
+                    self.git.git.push('-f', *args)
+                else:
+                    raise
+
+        if branch:
+            with operation(f'Pushing branch {branch} to remote repository'):
+                do_push('-u', 'origin', branch)
+
+        if tag:
+            with operation(f'Pushing tag {tag} to remote repository'):
+                do_push('origin', tag)
+
+    def delete_local_branch(self, branch: str):
+        with operation(f'Deleting local branch {branch}') as reporter:
+            if self.branch_exists(branch):
+                Head.delete(self.git, branch)
+            else:
+                reporter(_SKIP)
+
+    def delete_remote_branch(self, branch: str):
+        with operation(f'Deleting remote branch {self.default_remote}/{branch}') as reporter:
+            try:
+                self.git.git.push(self.default_remote, '--delete', branch)
+            except GitCommandError as e:
+                if 'remote ref does not exist' in e.stderr:
+                    reporter(_SKIP)
                 else:
                     raise
 

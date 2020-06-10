@@ -49,4 +49,4 @@ def foreach(command: str, pr: bool, title: Optional[str], body: str):
                     repo.vcs.checkout(branch, ensure_clean=False)
                     repo.vcs.commit(title)
                     repo.vcs.open_pull_request(title=title, body=body, branch=branch, base=base)
-                    repo.vcs.checkout(base, leave_remote=False)
+                    repo.vcs.checkout(base)
