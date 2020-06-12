@@ -120,7 +120,10 @@ class Vcs:
                 fatal(f'The branch {self.active_branch} has uncommitted changes.',
                       'Please commit or purge them before proceeding with changes.')
 
-            self.git.git.checkout('-b', branch)
+            if self.branch_exists(branch):
+                self.git.git.checkout(branch)
+            else:
+                self.git.git.checkout('-b', branch)
 
     def push(self, branch: str = None, tag: str = None):
         def do_push(*args):
