@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Tuple, Optional
+
+import click
 
 from sebex.analysis.model import Language, AnalysisError, AnalysisEntry
 from sebex.config.manifest import ProjectHandle
@@ -9,6 +11,8 @@ from sebex.log import operation
 
 _Projects = Dict[ProjectHandle, Tuple[Language, AnalysisEntry]]
 _PackageNameIndex = Dict[str, ProjectHandle]
+
+_UNKNOWN_LANGUAGE = click.style('UNKNOWN LANGUAGE', fg='yellow')
 
 
 @dataclass(eq=False)
@@ -40,7 +44,10 @@ class AnalysisDatabase:
     @classmethod
     def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
         projects = list(projects)
-        projects = dict(zip(projects, for_each(projects, cls._do_collect, desc='Analyzing')))
+        projects = zip(projects, for_each(projects, cls._do_collect, desc='Analyzing'))
+        # Filter out ignored
+        projects = filter(lambda t: t[1][1], projects)
+        projects = dict(projects)
         return cls._analyze(projects)
 
     @classmethod
@@ -51,9 +58,14 @@ class AnalysisDatabase:
         return cls(projects, package_name_index)
 
     @staticmethod
-    def _do_collect(project: ProjectHandle) -> Tuple[Language, AnalysisEntry]:
-        with operation('Analyzing', project):
+    def _do_collect(project: ProjectHandle) -> Tuple[Language, Optional[AnalysisEntry]]:
+        with operation('Analyzing', project) as reporter:
             language = detect_language(project)
+
+            if language is Language.UNKNOWN:
+                reporter(_UNKNOWN_LANGUAGE)
+                return language, None
+
             support = language_support_for(language)
             entry = support.analyze(project)
             return language, entry
