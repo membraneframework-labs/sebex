@@ -26,6 +26,8 @@ def bootstrap(organization: Optional[str]):
                 repo = RepositoryManifest.from_github_repository(gh_repo)
                 manifest.upsert_repository(repo)
 
+        manifest.sort_repositories()
+
         # Check for potentially duplicate repositories
         all_repository_names = set(r.name for r in manifest.iter_repositories())
         clashes = list(find_similar_name_clashes(all_repository_names, REPO_NAME_SIMILARITY))

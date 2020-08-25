@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional, Iterable, Tuple, Set
+from typing import Optional, Iterable, Tuple, Set, Any
 
 
 class NameSimilarity(IntEnum):
@@ -42,6 +42,17 @@ def are_names_similar(a: str, b: str, profile: NameSimilarityProfile) -> NameSim
 
     return NameSimilarity.DIFFERENT
 
+
+def sorting_key(name: str, profile: NameSimilarityProfile) -> Any:
+    key = name
+
+    if profile.tolerate_whitespace:
+        key = key.strip(profile.tolerate_whitespace)
+
+    if profile.tolerate_punctuation_marks:
+        key = str([c for c in key if c not in profile.tolerate_punctuation_marks])
+
+    return key, name
 
 def is_name_similar_to_one_of(
     needle: str, haystack: Iterable[str],

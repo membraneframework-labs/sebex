@@ -9,6 +9,7 @@ from github import Repository as GithubRepository
 
 from sebex.config.file import ConfigFile
 from sebex.context import Context
+from sebex.name_similarity import sorting_key, REPO_NAME_SIMILARITY
 
 if TYPE_CHECKING:
     from sebex.vcs import Vcs
@@ -181,6 +182,9 @@ class Manifest(ConfigFile):
     def __init__(self, name: Optional[str], data):
         super().__init__(name, data)
 
+        self._rebuild_repository_index()
+
+    def _rebuild_repository_index(self):
         self._repository_index = {r['name']: i for i, r in enumerate(self._data['repositories'])}
 
     def get_repository_by_name(self, name: Union[str, RepositoryHandle]) -> RepositoryManifest:
@@ -215,3 +219,7 @@ class Manifest(ConfigFile):
         else:
             repos.append(repo.to_raw())
             self._repository_index[repo.name] = len(repos) - 1
+
+    def sort_repositories(self):
+        self._data['repositories'].sort(key=lambda r: sorting_key(r['name'], REPO_NAME_SIMILARITY))
+        self._rebuild_repository_index()
