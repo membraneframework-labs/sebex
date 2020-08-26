@@ -46,10 +46,10 @@ class Checksum:
                 for k, v in x.items():
                     visit(k)
                     visit(v)
-            elif isinstance(o, str):
-                m.update(bytes(o, 'utf-8'))
-            elif isinstance(o, bytes):
-                m.update(o)
+            elif isinstance(x, str):
+                m.update(bytes(x, 'utf-8'))
+            elif isinstance(x, bytes):
+                m.update(x)
             elif is_iterable(x):
                 for e in x:
                     visit(e)

@@ -1,6 +1,7 @@
 import pytest
 
 from sebex.analysis.version import VersionRequirement, Version, VersionSpec
+from sebex.checksum import Checksum
 
 
 @pytest.mark.parametrize('requirement_str, version_str, expected', [
@@ -57,3 +58,7 @@ def test_version_spec_targeting(target_version_str, expected_requirement_str):
     expected_requirement = VersionRequirement.parse(expected_requirement_str)
     expected_spec = VersionSpec(expected_requirement)
     assert VersionSpec.targeting(target_version) == expected_spec
+
+
+def test_petname_does_not_stack_overflow():
+    _ = Checksum.of(Version(major=0, minor=3, patch=0, prerelease='alpha', build=None)).petname
