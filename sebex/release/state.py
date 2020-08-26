@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import total_ordering
 from textwrap import indent
-from typing import List, Iterator, Collection, Iterable, Dict, Tuple, Optional
+from typing import List, Iterator, Collection, Iterable, Dict, Tuple, Set
 
 import click
 
@@ -148,32 +148,36 @@ class ReleaseState(ConfigFile, Checksumable):
             about_project = db.about(project)
             from_version = about_project.version
 
-            if from_version == to_version:
-                # We are not releasing anything at all.
-                return cls(sources={}, phases=[])
-            elif from_version > to_version:
+            if from_version > to_version:
                 # We are backporting bug fixes to older releases than the current one.
                 raise NotImplementedError('backports are not implemented yet')
-            else:
-                # We are making a brand-new release
-                sources = {project: to_version}
 
-                phases = graph.upgrade_phases(about_project.package)
-                phases = (
-                    (db.get_project_by_package(pkg) for pkg in sorted(phase))
-                    for phase in phases
-                )
-                phases = [PhaseState.clean(projs, db) for projs in phases]
-                assert len(phases) > 0
+            # We are making a brand-new release
+            sources = {project: to_version}
+            ignore = set()
 
-                rel = cls(sources=sources, phases=phases)
+            phases = graph.upgrade_phases(about_project.package)
+            phases = (
+                (db.get_project_by_package(pkg) for pkg in sorted(phase))
+                for phase in phases
+            )
+            phases = [PhaseState.clean(projs, db) for projs in phases]
+            assert len(phases) > 0
 
-                # Seed the release with initial project
-                rel.get_project(project).to_version = to_version
+            rel = cls(sources=sources, phases=phases)
 
-                rel._build_plan(db, graph)
-                rel._prune_unchanged()
-                return rel
+            # Seed the release with initial project
+            rel.get_project(project).to_version = to_version
+
+            # If we are releasing already manually released source version,
+            # then simulate brand new release to bump its dependencies
+            if from_version == to_version:
+                rel.get_project(project).from_version = _previous_version(to_version)
+                ignore.add(project)
+
+            rel._build_plan(db, graph)
+            rel._prune_unchanged(ignore=ignore)
+            return rel
 
     def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph):
         """
@@ -189,7 +193,6 @@ class ReleaseState(ConfigFile, Checksumable):
         for handle in self.sources.keys():
             project = self.get_project(handle)
             bumps[handle] = Bump.between(project.from_version, project.to_version)
-            assert bumps[handle] != Bump.STAY_AS_IS
 
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
@@ -207,7 +210,7 @@ class ReleaseState(ConfigFile, Checksumable):
                     dependency_updates[dependency].append(update)
 
                 # Notify user when we spot an obsolete package.
-                if not req.match(project.from_version):
+                if not req.match(project.from_version) and not req.match(project.to_version):
                     warn(f'Project {dependency} depends on an obsolete version '
                          f'of {project.project} (current version is {project.to_version}, '
                          f'while dependency requirement is {req}).')
@@ -265,10 +268,16 @@ class ReleaseState(ConfigFile, Checksumable):
 
                     yield project, dependency, relation
 
-    def _prune_unchanged(self):
+    def _prune_unchanged(self, ignore: Set[ProjectHandle] = None):
         """Drop no-op phases."""
+        if ignore is None:
+            ignore = set()
+
         pruned_phases = (
-            PhaseState([project for project in phase if not self._is_project_noop(project)])
+            PhaseState([
+                project
+                for project in phase
+                if not self._is_project_noop(project) and project.project not in ignore])
             for phase in self.phases
         )
         self.phases = [phase for phase in pruned_phases if phase]
@@ -469,3 +478,18 @@ def _bump_color(bump: Bump) -> str:
         return 'yellow'
     else:
         return 'red'
+
+
+def _previous_version(version: Version) -> Version:
+    v = list(version.to_tuple())
+    v.reverse()
+    for i in range(len(v)):
+        if v[i] is None or not isinstance(v[i], int):
+            pass
+        elif v[i] == 0:
+            v[i] = 9999
+        else:
+            v[i] -= 1
+            break
+    v.reverse()
+    return Version(*v)

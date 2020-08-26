@@ -26,7 +26,43 @@ def test_new_no_release():
         db=db,
         graph=graph
     )
-    assert rel == ReleaseState(sources={}, phases=[])
+    assert rel == ReleaseState(sources={project: db.about(project).version}, phases=[])
+
+
+def test_source_already_released():
+    db = chain_db(
+        versions={'a0': '2.0.0'},
+        specs=lambda _pkg, _dep, _vs: VersionSpec.parse('~> 1.0'),
+    )
+    graph = DependentsGraph.build(db)
+    rel = ReleaseState.plan(
+        project=ProjectHandle.parse('a0'),
+        to_version=Version.parse('2.0.0'),
+        db=db,
+        graph=graph
+    )
+    assert rel == ReleaseState(
+        sources={ProjectHandle.parse('a0'): Version.parse('2.0.0')},
+        phases=[
+            PhaseState([
+                ProjectState(
+                    project=ProjectHandle.parse('b0'),
+                    from_version=Version.parse('1.0.0'),
+                    to_version=Version.parse('1.1.0'),
+                    version_span=Span.ZERO,
+                    language=Language.ELIXIR,
+                    dependency_updates=[
+                        DependencyUpdate(
+                            name='a0',
+                            from_spec=VersionSpec.parse('~> 1.0'),
+                            to_spec=VersionSpec.parse('~> 2.0'),
+                            to_spec_span=Span.ZERO,
+                        ),
+                    ],
+                )
+            ]),
+        ],
+    )
 
 
 def test_release_stable_patch_without_deps():
