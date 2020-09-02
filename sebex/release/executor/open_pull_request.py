@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from textwrap import dedent
 
+from sebex.analysis.version import Version
+from sebex.config.manifest import ProjectHandle
 from sebex.release.executor.types import Task, Action
 from sebex.release.git import release_branch_name, pull_request_title
-from sebex.release.state import ReleaseStage, ReleaseState, ProjectState
+from sebex.release.state import ReleaseStage, ReleaseState
 
 
 @dataclass
@@ -26,15 +27,15 @@ class OpenPullRequest(Task):
             return Action.SKIP
 
     def _pull_request_body(self, release: ReleaseState) -> str:
-        def row(p: ProjectState):
-            return f'| {p.project} | `{p.from_version}` | `{p.to_version}` |'
+        def row(p: ProjectHandle, v: Version):
+            return f'| {p} | `{v}` |'
 
-        sources = '\n'.join(row(release.get_project(p)) for p in release.sources.keys())
+        sources = '\n'.join(row(p, v) for p, v in release.sources.items())
 
-        return dedent(f'''\
-        ### Release "{release.codename()}"
+        return f'''\
+### Release "{release.codename()}"
 
-        | Project | From | To |
-        |---|---|---|
-        {sources}
-        ''')
+| Project | New Version |
+|---|---|
+{sources}
+'''
