@@ -36,10 +36,16 @@ class AnalysisDatabase:
         return self._package_name_index[package]
 
     def language(self, project: ProjectHandle) -> Language:
-        return self._projects[project][0]
+        return self._get_project(project)[0]
 
     def about(self, project: ProjectHandle) -> AnalysisEntry:
-        return self._projects[project][1]
+        return self._get_project(project)[1]
+
+    def _get_project(self, project):
+        if self.has_project(project):
+            return self._projects[project]
+        else:
+            raise AnalysisError(f'Project not found: "{project}". Make sure projects are synced via `sebex sync`.')
 
     @classmethod
     def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
