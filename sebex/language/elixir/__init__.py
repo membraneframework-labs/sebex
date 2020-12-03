@@ -78,9 +78,12 @@ class ElixirLanguageSupport(LanguageSupport):
 
         if project.repo.vcs.is_tracked(mix_lock(project)):
             with operation('Update lockfile'):
-                popen(['mix', 'deps.update', '--all'], log_stdout=True, cwd=project.location)
-                if project.repo.vcs.is_changed(mix_lock(project)):
-                    project.repo.vcs.commit('update lockfile', [mix_lock(project)])
+                if popen(['mix', 'deps.update', '--all'], log_stdout=True, check=False, cwd=project.location).returncode == 0 \
+                    or confirm('There was an error updating dependencies, that will have to be resolved manually. Continue anyway?'):
+                    if project.repo.vcs.is_changed(mix_lock(project)):
+                        project.repo.vcs.commit('update lockfile', [mix_lock(project)])
+                else:
+                    fatal('Error updating lockfile')
 
     def publish(self, project: ProjectHandle) -> bool:
         if not os.getenv('HEX_API_KEY'):
@@ -89,6 +92,7 @@ class ElixirLanguageSupport(LanguageSupport):
                  'To generate API key, run this command: mix hex.user key generate')
 
         with operation('Dry run'):
+            popen(['mix', 'deps.get'], log_stdout=True, cwd=project.location)
             popen(['mix', 'hex.publish', '--yes', '--dry-run'], log_stdout=True,
                   cwd=project.location)
 
