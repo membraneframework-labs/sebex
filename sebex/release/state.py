@@ -202,7 +202,7 @@ class ReleaseState(ConfigFile, Checksumable):
 
                 # We have to release a new version of dependent if its relation
                 # points to soon-to-be-outdated version of the dependency.
-                if req.match(project.from_version) and not req.match(project.to_version):
+                if (req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version):
                     dep_bump = bumps[project.project].derive(project.from_version)
                     bumps[dependency] = max(bumps[dependency], dep_bump)
 
@@ -285,7 +285,6 @@ class ReleaseState(ConfigFile, Checksumable):
     @classmethod
     def _is_project_noop(cls, project: 'ProjectState') -> bool:
         if project.from_version == project.to_version:
-            assert not project.dependency_updates, f'Noop project {project!r} is in invalid state'
             return True
         else:
             return False
