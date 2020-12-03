@@ -29,6 +29,15 @@ defmodule Sebex.ElixirAnalyzer do
 
     dependencies = SourceAnalysis.Dependency.extract(ast)
 
+    if length(dependencies) != length(project_info[:deps]) do
+      raise """
+      Error detecting dependencies. Project dependencies:
+      #{inspect(project_info[:deps])}
+      found dependencies:
+      #{inspect(dependencies)}
+      """
+    end
+
     hex = HexInfo.fetch!(package_name)
 
     %AnalysisReport{
