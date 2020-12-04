@@ -5,7 +5,7 @@ defmodule Sebex.ElixirAnalyzer.SourceAnalysis.Dependency do
   @type t :: %__MODULE__{
           name: atom,
           version_spec: String.t() | map(),
-          version_spec_span: Span.t(),
+          version_spec_span: Span.t()
         }
 
   @derive Jason.Encoder
@@ -28,7 +28,7 @@ defmodule Sebex.ElixirAnalyzer.SourceAnalysis.Dependency do
 
         {kw_def, _,
          [
-           {:deps, _, nil},
+           {:deps, _, args},
            [
              {
                {:literal, _, [:do]},
@@ -37,7 +37,7 @@ defmodule Sebex.ElixirAnalyzer.SourceAnalysis.Dependency do
            ]
          ]} = t,
         :not_found
-        when kw_def in [:def, :defp] and is_list(deps_list) ->
+        when kw_def in [:def, :defp] and is_list(deps_list) and args in [[], nil] ->
           {:skip, t, {:found, deps_list}}
 
         t, :not_found ->

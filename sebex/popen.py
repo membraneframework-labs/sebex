@@ -5,7 +5,7 @@ from typing import List, Union
 from sebex.log import logcontext, log, warn, error
 
 
-def popen(args: Union[str, PathLike, List[str]], log_stdout: bool = False,
+def popen(args: Union[str, PathLike, List[str]], log_stdout: bool = False, check = True,
           **kwargs) -> subprocess.CompletedProcess:
     if isinstance(args, str):
         lc = args
@@ -17,7 +17,7 @@ def popen(args: Union[str, PathLike, List[str]], log_stdout: bool = False,
     with logcontext(lc):
         try:
             proc = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
-                                  check=True, encoding='utf-8', **kwargs)
+                                  check=check, encoding='utf-8', **kwargs)
             if log_stdout:
                 for line in proc.stdout.splitlines():
                     log(line)
