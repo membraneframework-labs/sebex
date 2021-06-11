@@ -86,12 +86,12 @@ defmodule Sebex.ElixirAnalyzerTest do
                %Dependency{
                  name: :jason,
                  version_spec: "~> 1.1",
-                 version_spec_span: Span.new(17, 16, 17, 24),
+                 version_spec_span: Span.new(17, 16, 17, 24)
                },
                %Dependency{
                  name: :dialyxir,
                  version_spec: "~> 1.0.0-rc.7",
-                 version_spec_span: Span.new(18, 19, 18, 34),
+                 version_spec_span: Span.new(18, 19, 18, 34)
                },
                %Dependency{
                  name: :bunch,

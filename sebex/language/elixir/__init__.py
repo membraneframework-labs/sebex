@@ -33,9 +33,12 @@ class ElixirLanguageSupport(LanguageSupport):
         return mix_file(project).exists()
 
     def analyze(self, project: ProjectHandle) -> AnalysisEntry:
+        import re
         with resources.path(__name__, 'elixir_analyzer') as elixir_analyzer:
             proc = popen([elixir_analyzer, '--mix', mix_file(project)])
-            raw = json.loads(proc.stdout)
+            analyzer_report = re.findall("<SEBEX_ELIXIR_ANALYZER_REPORT>(.*?)</SEBEX_ELIXIR_ANALYZER_REPORT>", proc.stdout, re.DOTALL)
+            analyzer_report = analyzer_report[0]
+            raw = json.loads(analyzer_report)
 
         package = raw['package']
         version = Version.parse(raw['version'])

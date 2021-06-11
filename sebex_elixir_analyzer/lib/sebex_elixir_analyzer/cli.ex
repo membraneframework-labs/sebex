@@ -1,8 +1,11 @@
 defmodule Sebex.ElixirAnalyzer.CLI do
   def main(["--mix", path]) do
-    path
-    |> Sebex.ElixirAnalyzer.analyze_mix_exs_file!()
-    |> Jason.encode!()
+    analysis_report =
+      path
+      |> Sebex.ElixirAnalyzer.analyze_mix_exs_file!()
+      |> Jason.encode!()
+
+    ("<SEBEX_ELIXIR_ANALYZER_REPORT>" <> analysis_report <> "</SEBEX_ELIXIR_ANALYZER_REPORT>")
     |> IO.puts()
   end
 
