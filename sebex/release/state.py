@@ -196,10 +196,12 @@ class ReleaseState(ConfigFile, Checksumable):
 
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
+            print()
+            print("project: ", project.project, project.to_version)
+            # print("dependency: ", dependency)
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
                 req: VersionRequirement = relation.version_spec.value
-
                 # We have to release a new version of dependent if its relation
                 # points to soon-to-be-outdated version of the dependency.
                 if (req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version):
@@ -208,6 +210,15 @@ class ReleaseState(ConfigFile, Checksumable):
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)
+                    # do the upate'ing:
+                    for phase in self.phases:
+                        for project in phase:
+                            if project.project in self.sources:
+                                project.to_version = self.sources[project.project]
+                            else:
+                                project.to_version = bumps[project.project].apply(project.from_version)
+
+                project.dependency_updates = dependency_updates[project.project]
 
                 # Notify user when we spot an obsolete package.
                 if not req.match(project.from_version) and not req.match(project.to_version):
@@ -232,6 +243,8 @@ class ReleaseState(ConfigFile, Checksumable):
         for lst in dependency_updates.values():
             lst.sort(key=lambda u: u.name)
 
+        print("\n\nbumps:\n")
+
         # Apply found version bumps to projects
         for phase in self.phases:
             for project in phase:
@@ -241,6 +254,9 @@ class ReleaseState(ConfigFile, Checksumable):
                     project.to_version = bumps[project.project].apply(project.from_version)
 
                 project.dependency_updates = dependency_updates[project.project]
+                print()
+                print(project.project, project.to_version)
+
 
     def _dependency_relations(
         self,
