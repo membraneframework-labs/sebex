@@ -193,12 +193,11 @@ class ReleaseState(ConfigFile, Checksumable):
         for handle in self.sources.keys():
             project = self.get_project(handle)
             bumps[handle] = Bump.between(project.from_version, project.to_version)
+        
+        projects = {project.project: project for phase in self.phases for project in phase}
 
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
-            print()
-            print("project: ", project.project, project.to_version)
-            # print("dependency: ", dependency)
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
                 req: VersionRequirement = relation.version_spec.value
@@ -210,15 +209,13 @@ class ReleaseState(ConfigFile, Checksumable):
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)
-                    # do the upate'ing:
-                    for phase in self.phases:
-                        for project in phase:
-                            if project.project in self.sources:
-                                project.to_version = self.sources[project.project]
-                            else:
-                                project.to_version = bumps[project.project].apply(project.from_version)
 
-                project.dependency_updates = dependency_updates[project.project]
+                    # Apply version bump to the dependent project:
+                    dependent_project = projects[dependency]
+                    if dependency in self.sources:
+                        dependent_project.to_version = self.sources[dependency]
+                    else:
+                        dependent_project.to_version = bumps[dependency].apply(dependent_project.from_version)
 
                 # Notify user when we spot an obsolete package.
                 if not req.match(project.from_version) and not req.match(project.to_version):
@@ -243,20 +240,9 @@ class ReleaseState(ConfigFile, Checksumable):
         for lst in dependency_updates.values():
             lst.sort(key=lambda u: u.name)
 
-        print("\n\nbumps:\n")
-
-        # Apply found version bumps to projects
-        for phase in self.phases:
-            for project in phase:
-                if project.project in self.sources:
-                    project.to_version = self.sources[project.project]
-                else:
-                    project.to_version = bumps[project.project].apply(project.from_version)
-
-                project.dependency_updates = dependency_updates[project.project]
-                print()
-                print(project.project, project.to_version)
-
+        # Apply dependency updates
+        for project in projects.values():
+            project.dependency_updates = dependency_updates[project.project]
 
     def _dependency_relations(
         self,
