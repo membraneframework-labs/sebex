@@ -21,6 +21,8 @@ def popen(args: Union[str, PathLike, List[str]], log_stdout: bool = False, check
             if log_stdout:
                 for line in proc.stdout.splitlines():
                     log(line)
+                for line in proc.stderr.splitlines():
+                    log(line)
             return proc
         except subprocess.CalledProcessError as e:
             if e.stdout:
