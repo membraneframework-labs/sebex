@@ -141,6 +141,9 @@ class ReleaseState(ConfigFile, Checksumable):
         hasher(self.sources)
         hasher(self.phases)
 
+
+
+siema
     @classmethod
     def plan(cls, project: ProjectHandle, to_version: Version,
              db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
@@ -197,8 +200,8 @@ class ReleaseState(ConfigFile, Checksumable):
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
             print()
-            print("project: ", project.project, project.to_version)
-            # print("dependency: ", dependency)
+            print("project: ", project.project)
+            print("dependency: ", dependency)
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
                 req: VersionRequirement = relation.version_spec.value
@@ -210,7 +213,6 @@ class ReleaseState(ConfigFile, Checksumable):
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)
-                    # do the upate'ing:
                     for phase in self.phases:
                         for project in phase:
                             if project.project in self.sources:
@@ -243,8 +245,6 @@ class ReleaseState(ConfigFile, Checksumable):
         for lst in dependency_updates.values():
             lst.sort(key=lambda u: u.name)
 
-        print("\n\nbumps:\n")
-
         # Apply found version bumps to projects
         for phase in self.phases:
             for project in phase:
@@ -254,8 +254,6 @@ class ReleaseState(ConfigFile, Checksumable):
                     project.to_version = bumps[project.project].apply(project.from_version)
 
                 project.dependency_updates = dependency_updates[project.project]
-                print()
-                print(project.project, project.to_version)
 
 
     def _dependency_relations(
