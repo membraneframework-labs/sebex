@@ -18,9 +18,47 @@ Under the hood this will build Elixir analyzer script and place it in expected p
 
 To update your existing installation, invoke `make install` again.
 
+## Usage
+
+Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `TOKEN` environment variable or pass it with the `--github_access_token` option.
+
+### General workflow
+
+Add an organization by running:
+```
+sebex bootstrap -o sebex-test-organization
+```
+#todo talk about `sebex graph` and .sebex/profiles for excluding broken repos 
+
+Clone the organization's repositories to the local workspace:
+```
+sebex sync
+```
+Specify the package you'd like to update:
+```
+sebex release plan
+Project: sebex_test_x
+Version: 0.8.0
+```
+
+### Elixir
+
+Sebex will update Elixir package dependencies and versions automatically and release them on your GitHub. To publish those updated packages to [Hex](https://hex.pm/) you need to be logged in as an authorized Hex package maintainer on your machine. You can check your status by running:
+```
+mix hex.user whoami
+```
+
+You also need to set the `HEX_API_KEY` environment variable to your Hex user key. To generate the key run:
+```
+mix hex.user key generate
+```
+
+You will be alerted when trying to update a package and it's dependents without publishing it to Hex as the dependent packages won't be able to resolve their dependencies to the required but unpublished version by running `mix deps.get`.
+
+If you proceed anyway then the entire package dependency tree will later need to be published manually in order of the dependency relations.
 ## Development
 
-We use [Poetry] to manage a dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build`.
+We use [Poetry] to manage dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build`.
 
 Python tests are run using pytest, run `pytest` inside `poetry shell` to execute them. To run Elixir analyzer test, run `mix test` within its directory.
 
