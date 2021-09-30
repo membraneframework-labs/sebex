@@ -22,40 +22,72 @@ To update your existing installation, invoke `make install` again.
 
 Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `TOKEN` environment variable or pass it with the `--github_access_token` option.
 
-### General workflow
+#### Preparation
 
-Add an organization by running:
-```
+It's advisable to use the `--profile` and `--workspace` options when running Sebex or to set env vars `SEBEX_PROFILE` and `SEBEX_WORKSPACE`
+
+To add an organization run:
+```bash
 sebex bootstrap -o sebex-test-organization
 ```
-#todo talk about `sebex graph` and .sebex/profiles for excluding broken repos 
+This will create the `manifest.yaml` listing all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!project_name` to your `workspace_directory/profiles/your_profile.txt` file.
 
-Clone the organization's repositories to the local workspace:
-```
+To perform further work Sebex must clone your organization's repositories to your local workspace:
+```bash
 sebex sync
 ```
-Specify the package you'd like to update:
+You can view the dependency graph of your projects:
+```bash
+sebex graph --view
 ```
+#### Releasing packages
+Prepare a release plan by listing the project names of the packages you want to release:
+```bash
 sebex release plan
-Project: sebex_test_x
-Version: 0.8.0
+Project: sebex_test_b
+Project: sebex_test_e
+Project:
 ```
+All listed packages as well as their dependent packages will be bumped by one minor version (e.g. 0.2.1 -> 0.3.0).
+Review if you're happy with the suggested release plan and save it.
+```
+Release "Purely Easy Wahoo"
+===========================
 
-### Elixir
+1. Phase "Surely Vocal Kitten"
+  * sebex_test_b, 0.2.0 -> 0.3.0, publish
+  * sebex_test_e, 0.2.0 -> 0.3.0, publish
+2. Phase "Easily Moved Tarpon"
+  * sebex_test_c, 0.2.0 -> 0.3.0, publish
+    dependencies: sebex_test_b, "~> 0.2.0" -> "~> 0.3.0"
+3. Phase "Vastly Nice Impala"
+  * sebex_test_d, 0.2.0 -> 0.3.0, publish
+    dependencies: sebex_test_c, "~> 0.2.0" -> "~> 0.3.0"
+  * sebex_test_f, 0.2.0 -> 0.3.0, publish
+    dependencies:
+      - sebex_test_c, "~> 0.2.0" -> "~> 0.3.0"
+      - sebex_test_e, "~> 0.2.0" -> "~> 0.3.0"
 
-Sebex will update Elixir package dependencies and versions automatically and release them on your GitHub. To publish those updated packages to [Hex](https://hex.pm/) you need to be logged in as an authorized Hex package maintainer on your machine. You can check your status by running:
+Save this release? [y/N]:
 ```
-mix hex.user whoami
+To execute the plan run:
+```bash
+sebex release proceed
 ```
+for each phase of the plan.
+#### Elixir
+
+At the moment Elixir is the only supported language.
+
+Sebex will modify your Elixir projects by updating your project version and dependencies in the `mix.exs` file. Those changes will be commited to Github and tagged as a version release. To publish those updated packages to [Hex](https://hex.pm/) you need to be logged in as an authorized Hex package maintainer on your machine.
 
 You also need to set the `HEX_API_KEY` environment variable to your Hex user key. To generate the key run:
-```
+```bash
 mix hex.user key generate
 ```
 
-You will be alerted when trying to update a package and it's dependents without publishing it to Hex as the dependent packages won't be able to resolve their dependencies to the required but unpublished version by running `mix deps.get`.
-
-If you proceed anyway then the entire package dependency tree will later need to be published manually in order of the dependency relations.
+Only packages that were released at least once will be published automatically by Sebex to avoid publishing work-in-progress projects.
+However packages belonging to the Github `sebex-test-organization` will always be published.
 ## Development
 
 We use [Poetry] to manage dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build`.

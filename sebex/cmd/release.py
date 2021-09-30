@@ -33,8 +33,9 @@ def status():
 
 def gather_input() -> dict[Version, ProjectHandle]:
     bumps = {}
+    log("hit enter when done", color='yellow')
     while True:
-        value = click.prompt("Project name (hit enter to stop)", default="", show_default=False)
+        value = click.prompt("Project", default="", show_default=False)
         if value == "":
             break
         project = valid_project(value)
@@ -81,6 +82,7 @@ def plan(dry: bool):
 
     # gather project names of packages to be released
     bumps = gather_input()
+    assert len(bumps) > 0
 
     if not dry:
         if ReleaseState.exists():
