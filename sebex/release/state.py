@@ -7,7 +7,7 @@ from typing import List, Iterator, Collection, Iterable, Dict, Tuple, Set
 
 import click
 
-from sebex.analysis.database import AnalysisDatabase
+from sebex.analysis.database import VIRTUAL_NODE, AnalysisDatabase
 from sebex.analysis.graph import DependentsGraph
 from sebex.analysis.model import Dependency, Language, DependencyUpdate
 from sebex.analysis.version import Bump, VersionRequirement, VersionSpec, Version, UnsolvableBump
@@ -176,6 +176,9 @@ class ReleaseState(ConfigFile, Checksumable):
                 ignore.add(project)
 
             rel._build_plan(db, graph)
+            # modify the final release plan so that all mentions of `VIRTUAL_NODE` are removed
+            v_pkg = db.get_project_by_package(VIRTUAL_NODE)
+            ignore.add(v_pkg)
             rel._prune_unchanged(ignore=ignore)
             return rel
 
@@ -277,7 +280,7 @@ class ReleaseState(ConfigFile, Checksumable):
 
         pruned_phases = (
             PhaseState([
-                project
+                self._delete_virtual_updates(project)
                 for project in phase
                 if not self._is_project_noop(project) and project.project not in ignore])
             for phase in self.phases
@@ -290,7 +293,16 @@ class ReleaseState(ConfigFile, Checksumable):
             return True
         else:
             return False
-
+    
+    @classmethod
+    def _delete_virtual_updates(cls, project: 'ProjectState') -> 'ProjectState':
+        pruned_updates = [
+            update
+            for update in project.dependency_updates
+            if update.name != VIRTUAL_NODE
+        ]
+        project.dependency_updates = pruned_updates
+        return project
 
 @dataclass
 class PhaseState(Collection['ProjectReleaseState'], Checksumable):
