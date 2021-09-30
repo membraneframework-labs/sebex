@@ -53,7 +53,8 @@ class AnalysisEntry:
 
     @property
     def is_published(self) -> bool:
-        return bool(self.releases)
+        # always publish test packages
+        return bool(self.releases) or 'sebex_test' in self.package
 
 
 @dataclass

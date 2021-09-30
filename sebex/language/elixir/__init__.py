@@ -103,7 +103,10 @@ class ElixirLanguageSupport(LanguageSupport):
             return False
 
         with operation('Publishing for real'):
-            proc = popen(['mix', 'hex.publish', '--yes'], log_stdout=True, cwd=project.location)
+            if 'sebex_test' in str(project):
+                proc = popen(['mix', 'hex.publish', '--yes', '--replace'], log_stdout=True, cwd=project.location)
+            else:
+                proc = popen(['mix', 'hex.publish', '--yes'], log_stdout=True, cwd=project.location)
 
             # https://github.com/hexpm/hex/blob/3362c4abea51525d6c435ebb30bacfa603e0213a/lib/mix/tasks/hex.publish.ex#L536
             if 'Package published to ' in proc.stdout:
