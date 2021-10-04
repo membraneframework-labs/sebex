@@ -7,7 +7,7 @@ from sebex.analysis.graph import DependentsGraph
 from sebex.config.profile import current_project_handles
 
 
-def analyze(bumps: dict[ProjectHandle, Version] = None) -> Tuple[AnalysisDatabase, DependentsGraph]:
-    database = AnalysisDatabase.collect(current_project_handles(), bumps)
+def analyze() -> Tuple[AnalysisDatabase, DependentsGraph]:
+    database = AnalysisDatabase.collect(current_project_handles())
     graph = DependentsGraph.build(database)
     return database, graph

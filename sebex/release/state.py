@@ -7,7 +7,7 @@ from typing import List, Iterator, Collection, Iterable, Dict, Tuple, Set
 
 import click
 
-from sebex.analysis.database import VIRTUAL_NODE, AnalysisDatabase
+from sebex.analysis.database import AnalysisDatabase
 from sebex.analysis.graph import DependentsGraph
 from sebex.analysis.model import Dependency, Language, DependencyUpdate
 from sebex.analysis.version import Bump, VersionRequirement, VersionSpec, Version, UnsolvableBump
@@ -142,43 +142,43 @@ class ReleaseState(ConfigFile, Checksumable):
         hasher(self.phases)
 
     @classmethod
-    def plan(cls, project: ProjectHandle, to_version: Version,
-             db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
+    def plan(cls, sources: Dict[ProjectHandle, Version], db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
         with operation('Constructing release plan'):
-            about_project = db.about(project)
-            from_version = about_project.version
-
-            if from_version > to_version:
-                # We are backporting bug fixes to older releases than the current one.
-                raise NotImplementedError('backports are not implemented yet')
-
-            # We are making a brand-new release
-            sources = {project: to_version}
             ignore = set()
+            allPhases = []
 
-            phases = graph.upgrade_phases(about_project.package)
-            phases = (
-                (db.get_project_by_package(pkg) for pkg in sorted(phase))
-                for phase in phases
-            )
-            phases = [PhaseState.clean(projs, db) for projs in phases]
-            assert len(phases) > 0
+            for project, to_version in sources.items():
+                about_project = db.about(project)
+                from_version = about_project.version
 
-            rel = cls(sources=sources, phases=phases)
+                if from_version > to_version:
+                    # We are backporting bug fixes to older releases than the current one.
+                    raise NotImplementedError('backports are not implemented yet')
 
-            # Seed the release with initial project
-            rel.get_project(project).to_version = to_version
+                phases = graph.upgrade_phases(about_project.package)
+                phases = (
+                    (db.get_project_by_package(pkg) for pkg in sorted(phase))
+                    for phase in phases
+                )
+                phases = [PhaseState.clean(projs, db) for projs in phases]
+                assert len(phases) > 0
+                for phase in phases:
+                    allPhases.append(phase)
 
-            # If we are releasing already manually released source version,
-            # then simulate brand new release to bump its dependencies
-            if from_version == to_version:
-                rel.get_project(project).from_version = _previous_version(to_version)
-                ignore.add(project)
+            rel = cls(sources=sources, phases=allPhases)
+
+            for project, to_version in sources.items():
+                # Seed the release with initial project
+                rel.get_project(project).to_version = to_version
+
+                # If we are releasing already manually released source version,
+                # then simulate brand new release to bump its dependencies
+                if from_version == to_version:
+                    rel.get_project(project).from_version = _previous_version(to_version)
+                    ignore.add(project)
 
             rel._build_plan(db, graph)
-            # modify the final release plan so that all mentions of `VIRTUAL_NODE` are removed
-            v_pkg = db.get_project_by_package(VIRTUAL_NODE)
-            ignore.add(v_pkg)
+            # modify the final release plan so that all mentions of `VIRTUAL_ROOT` are removed
             rel._prune_unchanged(ignore=ignore)
             return rel
 
@@ -280,7 +280,7 @@ class ReleaseState(ConfigFile, Checksumable):
 
         pruned_phases = (
             PhaseState([
-                self._delete_virtual_updates(project)
+                project
                 for project in phase
                 if not self._is_project_noop(project) and project.project not in ignore])
             for phase in self.phases
@@ -293,16 +293,6 @@ class ReleaseState(ConfigFile, Checksumable):
             return True
         else:
             return False
-    
-    @classmethod
-    def _delete_virtual_updates(cls, project: 'ProjectState') -> 'ProjectState':
-        pruned_updates = [
-            update
-            for update in project.dependency_updates
-            if update.name != VIRTUAL_NODE
-        ]
-        project.dependency_updates = pruned_updates
-        return project
 
 @dataclass
 class PhaseState(Collection['ProjectReleaseState'], Checksumable):
