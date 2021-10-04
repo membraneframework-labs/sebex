@@ -7,7 +7,7 @@ from typing import List
 from sebex.analysis.model import AnalysisEntry, Dependency, Release, Language, DependencyUpdate
 from sebex.analysis.version import VersionSpec, Version
 from sebex.cli import confirm
-from sebex.config.manifest import ProjectHandle
+from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.patch import patch_file
 from sebex.edit.span import Span
 from sebex.language.abc import LanguageSupport
@@ -103,7 +103,7 @@ class ElixirLanguageSupport(LanguageSupport):
             return False
 
         with operation('Publishing for real'):
-            if 'sebex_test' in str(project):
+            if Manifest.open().allow_replace_on_publish:
                 proc = popen(['mix', 'hex.publish', '--yes', '--replace'], log_stdout=True, cwd=project.location)
             else:
                 proc = popen(['mix', 'hex.publish', '--yes'], log_stdout=True, cwd=project.location)

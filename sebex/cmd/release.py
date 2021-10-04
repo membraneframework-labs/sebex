@@ -7,7 +7,8 @@ from sebex.config.manifest import ProjectHandle, Manifest
 from sebex.log import success, log, fatal, operation, warn
 from sebex.release.executor import Action, plan as execute_plan, proceed as proceed_plan
 from sebex.release.state import ReleaseState
-from typing import Optional
+from typing import Optional, Dict
+
 
 @click.group()
 def release():
@@ -29,6 +30,7 @@ def status():
         log(rel.describe())
     else:
         success('There is no release pending at this moment, feel free to start one.')
+
 
 def gather_input() -> Dict[Version, ProjectHandle]:
     sources = {}
@@ -52,12 +54,14 @@ def gather_input() -> Dict[Version, ProjectHandle]:
                 break
     return sources
 
+
 def valid_version(value: str) -> Optional[Version]:
     try:
         return Version.parse(value)
     except ValueError:
         print(f'{value!r} is not a valid version')
         return None
+
 
 def valid_project(value: str) -> Optional[ProjectHandle]:
     try:
@@ -71,6 +75,7 @@ def valid_project(value: str) -> Optional[ProjectHandle]:
                 return project
     print(f'Unknown project {handle}')
     return None
+
 
 @release.command()
 @click.option('--dry', is_flag=True,
@@ -128,7 +133,8 @@ def proceed(dry: bool):
                 with operation('Removing release state file'):
                     rel.delete()
             else:
-                success(f'The phase "{rel.current_phase().codename()}" has finished successfully!')
+                success(
+                    f'The phase "{rel.current_phase().codename()}" has finished successfully!')
                 warn('To proceed, rerun this command.')
         elif action == Action.BREAKPOINT:
             warn('A breakpoint has been reached!')

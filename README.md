@@ -22,34 +22,44 @@ To update your existing installation, invoke `make install` again.
 
 Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `TOKEN` environment variable or pass it with the `--github_access_token` option.
 
-#### Preparation
+### Preparation
 
 It's advisable to use the `--profile` and `--workspace` options when running Sebex or to set env vars `SEBEX_PROFILE` and `SEBEX_WORKSPACE`
 
 To add an organization run:
+
 ```bash
 sebex bootstrap -o sebex-test-organization
 ```
+
 This will create the `manifest.yaml` listing all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!project_name` to your `workspace_directory/profiles/your_profile.txt` file.
 
 To perform further work Sebex must clone your organization's repositories to your local workspace:
+
 ```bash
 sebex sync
 ```
+
 You can view the dependency graph of your projects:
+
 ```bash
 sebex graph --view
 ```
-#### Releasing packages
+
+### Releasing packages
+
 Prepare a release plan by listing the project names of the packages you want to release:
+
 ```bash
 sebex release plan
 Project: sebex_test_b
 Project: sebex_test_e
 Project:
 ```
+
 All listed packages as well as their dependent packages will be bumped by one minor version (e.g. 0.2.1 -> 0.3.0).
 Review if you're happy with the suggested release plan and save it.
+
 ```
 Release "Purely Easy Wahoo"
 ===========================
@@ -70,27 +80,33 @@ Release "Purely Easy Wahoo"
 
 Save this release? [y/N]:
 ```
+
 To execute the plan run:
+
 ```bash
 sebex release proceed
 ```
+
 for each phase of the plan.
-#### Elixir
+
+### Elixir
 
 At the moment Elixir is the only supported language.
 
 Sebex will modify your Elixir projects by updating your project version and dependencies in the `mix.exs` file. Those changes will be commited to Github and tagged as a version release. To publish those updated packages to [Hex](https://hex.pm/) you need to be logged in as an authorized Hex package maintainer on your machine.
 
 You also need to set the `HEX_API_KEY` environment variable to your Hex user key. To generate the key run:
+
 ```bash
 mix hex.user key generate
 ```
 
 Only packages that were released at least once will be published automatically by Sebex to avoid publishing work-in-progress projects.
 However packages belonging to the Github `sebex-test-organization` will always be published.
+
 ## Development
 
-We use [Poetry] to manage dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build`.
+We use [Poetry] to manage dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build` .
 
 Python tests are run using pytest, run `pytest` inside `poetry shell` to execute them. To run Elixir analyzer test, run `mix test` within its directory.
 

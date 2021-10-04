@@ -14,7 +14,7 @@ from sebex.analysis.version import Bump, VersionRequirement, VersionSpec, Versio
 from sebex.checksum import Checksum, Checksumable
 from sebex.config.file import ConfigFile
 from sebex.config.format import Format, YamlFormat
-from sebex.config.manifest import ProjectHandle
+from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.span import Span
 from sebex.log import operation, error, warn
 
@@ -293,6 +293,7 @@ class ReleaseState(ConfigFile, Checksumable):
             return True
         else:
             return False
+            
 
 @dataclass
 class PhaseState(Collection['ProjectReleaseState'], Checksumable):
@@ -426,13 +427,17 @@ class ProjectState(Checksumable):
     @classmethod
     def clean(cls, project: ProjectHandle, db: AnalysisDatabase) -> 'ProjectState':
         about = db.about(project)
+        manifest = Manifest.open()
+        publish = about.is_published or \
+                  manifest.force_publish(project.repo) or \
+                  manifest.force_publish_all
         return cls(
             project=project,
             from_version=about.version,
             to_version=about.version,
             version_span=about.version_span,
             language=db.language(project),
-            publish=about.is_published,
+            publish=publish,
         )
 
     def checksum(self, hasher):
