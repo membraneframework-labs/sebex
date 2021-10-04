@@ -8,7 +8,7 @@ from sebex.analysis.model import AnalysisEntry, Dependency, Release, Language, D
 from sebex.analysis.version import VersionSpec, Version
 from sebex.cli import confirm
 from sebex.config.manifest import Manifest, ProjectHandle
-from sebex.edit.patch import patch_file
+from sebex.edit.patch import patch_file, patch_readme
 from sebex.edit.span import Span
 from sebex.language.abc import LanguageSupport
 from sebex.log import operation, warn, fatal
@@ -21,6 +21,10 @@ def mix_file(project: ProjectHandle) -> Path:
 
 def mix_lock(project: ProjectHandle) -> Path:
     return project.location / 'mix.lock'
+
+
+def readme_file(project: ProjectHandle) -> Path:
+    return project.location / 'README.md'
 
 
 class ElixirLanguageSupport(LanguageSupport):
@@ -76,8 +80,12 @@ class ElixirLanguageSupport(LanguageSupport):
                 *[(dep.to_spec_span, self._translate_version_spec(dep.to_spec))
                   for dep in dependencies]
             ])
-
             project.repo.vcs.commit(f'bump to {to_version}', [mix_file(project)])
+
+        with operation('Update README.md'):
+            patch_readme(readme_file(project), str(project), str(to_version))
+            project.repo.vcs.commit(f'update readme', [readme_file(project)])
+
 
         if project.repo.vcs.is_tracked(mix_lock(project)):
             with operation('Update lockfile'):

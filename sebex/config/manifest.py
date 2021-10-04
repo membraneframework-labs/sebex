@@ -180,8 +180,7 @@ class Manifest(ConfigFile):
         'config': {
             'hex':
             {
-                'allow_replace_on_publish': False,
-                'force_publish_all': False
+                'allow_replace_on_publish': False
             }
         }
     }
@@ -199,10 +198,6 @@ class Manifest(ConfigFile):
     @property
     def allow_replace_on_publish(self) -> bool:
         return self._data['config']['hex']['allow_replace_on_publish']
-
-    @property
-    def force_publish_all(self) -> bool:
-        return self._data['config']['hex']['force_publish_all']
 
     def force_publish(self, name: Union[str, RepositoryHandle]) -> bool:
         repo = self.get_repository_by_name(name)

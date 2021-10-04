@@ -429,8 +429,7 @@ class ProjectState(Checksumable):
         about = db.about(project)
         manifest = Manifest.open()
         publish = about.is_published or \
-                  manifest.force_publish(project.repo) or \
-                  manifest.force_publish_all
+                  manifest.force_publish(project.repo)
         return cls(
             project=project,
             from_version=about.version,
