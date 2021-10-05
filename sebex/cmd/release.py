@@ -2,12 +2,12 @@ import click
 
 from sebex.analysis.state import analyze
 from sebex.analysis.version import Version
-from sebex.cli import PROJECT, VERSION, confirm
+from sebex.cli import confirm, SOURCE
 from sebex.config.manifest import ProjectHandle, Manifest
 from sebex.log import success, log, fatal, operation, warn
 from sebex.release.executor import Action, plan as execute_plan, proceed as proceed_plan
 from sebex.release.state import ReleaseState
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 
 
 @click.group()
@@ -80,13 +80,19 @@ def valid_project(value: str) -> Optional[ProjectHandle]:
 @release.command()
 @click.option('--dry', is_flag=True,
               help='Print what would be done, but do not persist the generated plan.')
-def plan(dry: bool):
+@click.option('--source', '-s', multiple=True, type=SOURCE)
+def plan(dry: bool, source):
     """
     Prepare release plan for managed packages.
     """
 
-    # gather project names of packages to be released
-    sources = gather_input()
+    # gather project names of packages to be released if none were passed via --source option
+    sources = {}
+    if source == ():
+        sources = gather_input()
+    else:
+        for p, v in source:
+            sources[p] = v
 
     if not dry:
         if ReleaseState.exists():
