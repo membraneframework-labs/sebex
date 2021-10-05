@@ -1,14 +1,14 @@
-from sebex.analysis.database import VIRTUAL_NODE
 import click
 
 from sebex.analysis.state import analyze
 from sebex.analysis.version import Version
-from sebex.cli import PROJECT, VERSION, confirm
+from sebex.cli import confirm, SOURCE
 from sebex.config.manifest import ProjectHandle, Manifest
 from sebex.log import success, log, fatal, operation, warn
 from sebex.release.executor import Action, plan as execute_plan, proceed as proceed_plan
 from sebex.release.state import ReleaseState
-from typing import Optional
+from typing import Optional, Dict, Tuple
+
 
 @click.group()
 def release():
@@ -31,33 +31,37 @@ def status():
     else:
         success('There is no release pending at this moment, feel free to start one.')
 
-def gather_input() -> dict[Version, ProjectHandle]:
-    bumps = {}
+
+def gather_input() -> Dict[Version, ProjectHandle]:
+    sources = {}
     log("hit enter when done", color='yellow')
     while True:
         value = click.prompt("Project", default="", show_default=False)
         if value == "":
-            break
+            if len(sources) == 0:
+                log("you must provide at least one project", color="red")
+                continue
+            else:
+                break
         project = valid_project(value)
         if project is None:
             continue
-        # TODO at this moment all packages are bumped by one minor version
-        # TODO it would be better to specify different release versions for different packages
-        # while True:
-        #     value = click.prompt("Version")
-        #     version = valid_version(value)
-        #     if version is not None:
-        #         bumps[project] = version
-        #         break
-        bumps[project] = None # replace this line with commented code above to use version
-    return bumps
+        while True:
+            value = click.prompt("Version")
+            version = valid_version(value)
+            if version is not None:
+                sources[project] = version
+                break
+    return sources
 
-# def valid_version(value: str) -> Optional[Version]:
-#     try:
-#         return Version.parse(value)
-#     except ValueError:
-#         print(f'{value!r} is not a valid version')
-#         return None
+
+def valid_version(value: str) -> Optional[Version]:
+    try:
+        return Version.parse(value)
+    except ValueError:
+        print(f'{value!r} is not a valid version')
+        return None
+
 
 def valid_project(value: str) -> Optional[ProjectHandle]:
     try:
@@ -72,17 +76,23 @@ def valid_project(value: str) -> Optional[ProjectHandle]:
     print(f'Unknown project {handle}')
     return None
 
+
 @release.command()
 @click.option('--dry', is_flag=True,
               help='Print what would be done, but do not persist the generated plan.')
-def plan(dry: bool):
+@click.option('--source', '-s', multiple=True, type=SOURCE)
+def plan(dry: bool, source):
     """
     Prepare release plan for managed packages.
     """
 
-    # gather project names of packages to be released
-    bumps = gather_input()
-    assert len(bumps) > 0
+    # gather project names of packages to be released if none were passed via --source option
+    sources = {}
+    if source == ():
+        sources = gather_input()
+    else:
+        for p, v in source:
+            sources[p] = v
 
     if not dry:
         if ReleaseState.exists():
@@ -90,11 +100,8 @@ def plan(dry: bool):
             fatal(f'Release "{rel.codename()}" is already running.',
                   'Please finish it before creating new one.')
 
-    database, graph = analyze(bumps)
-    # creating the v_project happens under `analyze` in `AnalysisDatabase._add_virtual_root`
-    v_project = database.get_project_by_package(VIRTUAL_NODE)
-    # bump v_project from 0.1.0 -> 0.2.0 thereby bumping all dependent packages
-    rel = ReleaseState.plan(v_project, Version(0, 2, 0), database, graph)
+    database, graph = analyze()
+    rel = ReleaseState.plan(sources, database, graph)
 
     log()
     log(rel.describe())
@@ -132,7 +139,8 @@ def proceed(dry: bool):
                 with operation('Removing release state file'):
                     rel.delete()
             else:
-                success(f'The phase "{rel.current_phase().codename()}" has finished successfully!')
+                success(
+                    f'The phase "{rel.current_phase().codename()}" has finished successfully!')
                 warn('To proceed, rerun this command.')
         elif action == Action.BREAKPOINT:
             warn('A breakpoint has been reached!')

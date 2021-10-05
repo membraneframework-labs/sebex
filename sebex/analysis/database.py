@@ -3,10 +3,8 @@ from typing import Dict, Iterable, Tuple, Optional
 
 import click
 
-from sebex.edit.span import Span
-from sebex.analysis.version import Version, VersionSpec, VersionRequirement, Pin
-from sebex.analysis.model import Language, AnalysisError, AnalysisEntry, Release, Dependency
-from sebex.config.manifest import ProjectHandle, RepositoryHandle
+from sebex.analysis.model import Language, AnalysisError, AnalysisEntry
+from sebex.config.manifest import ProjectHandle
 from sebex.jobs import for_each
 from sebex.language import detect_language, language_support_for, Language
 from sebex.log import operation
@@ -16,7 +14,6 @@ _PackageNameIndex = Dict[str, ProjectHandle]
 
 _UNKNOWN_LANGUAGE = click.style('UNKNOWN LANGUAGE', fg='yellow')
 
-VIRTUAL_NODE = '__virtual_root_node_project__'
 @dataclass(eq=False)
 class AnalysisDatabase:
     _projects: _Projects
@@ -50,14 +47,12 @@ class AnalysisDatabase:
             raise AnalysisError(f'Project not found: "{project}". Make sure projects are synced via `sebex sync`.')
 
     @classmethod
-    def collect(cls, projects: Iterable[ProjectHandle], bumps: dict[ProjectHandle, Version]=None) -> 'AnalysisDatabase':
+    def collect(cls, projects: Iterable[ProjectHandle]) -> 'AnalysisDatabase':
         projects = list(projects)
         projects = zip(projects, for_each(projects, cls._do_collect, desc='Analyzing'))
         # Filter out ignored
         projects = filter(lambda t: t[1][1], projects)
         projects = dict(projects)
-        if bumps is not None:
-            projects = cls._add_virtual_root(projects, bumps)
         return cls._analyze(projects)
 
     @classmethod
@@ -89,30 +84,3 @@ class AnalysisDatabase:
             else:
                 raise AnalysisError(f'Duplicate package name: "{entry.package}"')
         return index
-
-    @classmethod
-    def _add_virtual_root(cls, projects: dict[ProjectHandle], bumps: dict[ProjectHandle, Version]) -> dict[ProjectHandle]:
-        # create a fake package `VIRTUAL_NODE` with version 0.1.0
-        project = ProjectHandle(RepositoryHandle(VIRTUAL_NODE))
-        analysis_entry = AnalysisEntry(
-            VIRTUAL_NODE,
-            Version(0, 1, 0),
-            Span(0, 0, 0, 0),
-            [],
-            [Release(Version(0, 1, 0))])
-        projects[project] = (Language.ELIXIR, analysis_entry)
-        # for all packages to be released add a dependency to the virtual package
-        # this places it at the root of the dependency graph of all updated packages
-        for project, _version in bumps.items():
-            _language, analysis_entry = projects[project]
-            dependency = Dependency(
-                        name=VIRTUAL_NODE, 
-                        defined_in=str(project), 
-                        version_spec=VersionSpec(
-                            value=VersionRequirement(
-                                operator='~>', 
-                                base=Version(0, 1, 0), 
-                                pin=Pin.MINOR)), 
-                        version_spec_span=Span(start_line=0, start_column=0, end_line=0, end_column=0))
-            analysis_entry.dependencies.append(dependency)
-        return projects

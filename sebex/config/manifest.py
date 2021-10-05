@@ -14,7 +14,8 @@ from sebex.name_similarity import sorting_key, REPO_NAME_SIMILARITY
 if TYPE_CHECKING:
     from sebex.vcs import Vcs
 
-_GITHUB_SSH_URL = re.compile(r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
+_GITHUB_SSH_URL = re.compile(
+    r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
 
 
 @dataclass(order=True, unsafe_hash=True)
@@ -117,6 +118,7 @@ class ProjectManifest:
 class RepositoryManifest:
     name: str
     remote_url: str
+    force_publish: bool
     projects: List[ProjectManifest]
     default_branch: str = 'master'
 
@@ -149,7 +151,7 @@ class RepositoryManifest:
             raise ValueError('Repository is not hosted on GitHub')
 
     def to_raw(self) -> Dict:
-        d = {'name': self.name, 'remote_url': self.remote_url}
+        d = {'name': self.name, 'remote_url': self.remote_url, 'force_publish': False}
 
         if not (len(self.projects) == 1 and self.projects[0].is_root):
             d['projects'] = [ProjectManifest.to_raw(p) for p in self.projects]
@@ -162,19 +164,25 @@ class RepositoryManifest:
     @staticmethod
     def from_raw(raw: Dict) -> 'RepositoryManifest':
         projects = [ProjectManifest.from_raw(r) for r in raw.get('projects', [{'path': '.'}])]
-        return RepositoryManifest(name=raw['name'], remote_url=raw['remote_url'], projects=projects,
-                                  default_branch=raw.get('default_branch', 'master'))
+        return RepositoryManifest(name=raw['name'], remote_url=raw['remote_url'], force_publish=raw['force_publish'],
+                                  projects=projects, default_branch=raw.get('default_branch', 'master'))
 
     @staticmethod
     def from_github_repository(repo: GithubRepository) -> 'RepositoryManifest':
-        return RepositoryManifest(name=repo.name, remote_url=repo.ssh_url,
+        return RepositoryManifest(name=repo.name, remote_url=repo.ssh_url, force_publish=False,
                                   projects=[ProjectManifest()], default_branch=repo.default_branch)
 
 
 class Manifest(ConfigFile):
     _name = 'manifest'
     _data = {
-        'repositories': []
+        'repositories': [],
+        'config': {
+            'hex':
+            {
+                'allow_replace_on_publish': False
+            }
+        }
     }
 
     _repository_index: Dict[str, int]
@@ -186,6 +194,14 @@ class Manifest(ConfigFile):
 
     def _rebuild_repository_index(self):
         self._repository_index = {r['name']: i for i, r in enumerate(self._data['repositories'])}
+
+    @property
+    def allow_replace_on_publish(self) -> bool:
+        return self._data['config']['hex']['allow_replace_on_publish']
+
+    def force_publish(self, name: Union[str, RepositoryHandle]) -> bool:
+        repo = self.get_repository_by_name(name)
+        return repo.force_publish
 
     def get_repository_by_name(self, name: Union[str, RepositoryHandle]) -> RepositoryManifest:
         repo = self.find_repository_by_name(name)
