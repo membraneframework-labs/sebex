@@ -96,6 +96,8 @@ sebex release proceed
 
 for each phase of the plan.
 
+If at this point you encounter an error while releasing any phase of the plan there is no need to rerun `sebex release plan`. Instead run `sebex release proceed` after you've fixed the issue causing that phase to fail. Sebex will continue where you left off.
+
 ### Elixir
 
 At the moment Elixir is the only supported language.
