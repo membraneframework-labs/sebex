@@ -67,6 +67,8 @@ To disable updating of obsolete packages run:
 sebex release plan --no-update
 ```
 
+Example output of `sebex release plan`:
+
 ```
 Release "Purely Easy Wahoo"
 ===========================
