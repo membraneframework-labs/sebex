@@ -113,7 +113,6 @@ mix hex.user key generate
 ```
 
 Only packages that were released at least once will be published automatically by Sebex to avoid publishing work-in-progress projects.
-However packages belonging to the Github `sebex-test-organization` will always be published.
 
 ## Development
 
