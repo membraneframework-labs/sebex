@@ -114,6 +114,8 @@ mix hex.user key generate
 
 Only packages that were released at least once will be published automatically by Sebex to avoid publishing work-in-progress projects.
 
+To publish a package that has not yet been published to hex you can edit the `force-publish` field in your `manifest.yaml` file.
+
 ## Development
 
 We use [Poetry] to manage dependencies, virtual environments and builds. Run `poetry install` to install all dependencies. To build wheels run `make build` .
