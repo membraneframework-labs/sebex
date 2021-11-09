@@ -60,6 +60,13 @@ Project:
 All listed packages as well as their dependent packages will be bumped by one minor version (e.g. 0.2.1 -> 0.3.0).
 Review if you're happy with the suggested release plan and save it.
 
+Sebex will warn you if there are obsolete dependencies in your packages. By default they will be updated anyway.
+To disable updating of obsolete packages run:
+
+```bash
+sebex release plan --no-update
+```
+
 ```
 Release "Purely Easy Wahoo"
 ===========================

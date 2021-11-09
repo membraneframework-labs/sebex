@@ -142,7 +142,7 @@ class ReleaseState(ConfigFile, Checksumable):
         hasher(self.phases)
 
     @classmethod
-    def plan(cls, sources: Dict[ProjectHandle, Version], db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
+    def plan(cls, sources: Dict[ProjectHandle, Version], db: AnalysisDatabase, graph: DependentsGraph, update_obsolete: bool) -> 'ReleaseState':
         with operation('Constructing release plan'):
             ignore = set()
             allPhases = []
@@ -177,12 +177,12 @@ class ReleaseState(ConfigFile, Checksumable):
                     rel.get_project(project).from_version = _previous_version(to_version)
                     ignore.add(project)
 
-            rel._build_plan(db, graph)
+            rel._build_plan(db, graph, update_obsolete)
             # modify the final release plan so that all mentions of `VIRTUAL_ROOT` are removed
             rel._prune_unchanged(ignore=ignore)
             return rel
 
-    def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph):
+    def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph, update_obsolete: bool):
         """
         Propagates version bumps down the phases, we are searching for
         maximum needed bump for each project. Fills `dependency_updates` fields in project states.
@@ -206,7 +206,10 @@ class ReleaseState(ConfigFile, Checksumable):
                 req: VersionRequirement = relation.version_spec.value
                 # We have to release a new version of dependent if its relation
                 # points to soon-to-be-outdated version of the dependency.
-                if (req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version):
+                release_new_version = ((req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version))
+                package_is_obsolete = not req.match(project.from_version) and not req.match(project.to_version)
+
+                if release_new_version or (package_is_obsolete and update_obsolete):
                     dep_bump = bumps[project.project].derive(project.from_version)
                     bumps[dependency] = max(bumps[dependency], dep_bump)
 
@@ -220,8 +223,7 @@ class ReleaseState(ConfigFile, Checksumable):
                     else:
                         dependent_project.to_version = bumps[dependency].apply(dependent_project.from_version)
 
-                # Notify user when we spot an obsolete package.
-                if not req.match(project.from_version) and not req.match(project.to_version):
+                if package_is_obsolete:
                     warn(f'Project {dependency} depends on an obsolete version '
                          f'of {project.project} (current version is {project.to_version}, '
                          f'while dependency requirement is {req}).')
