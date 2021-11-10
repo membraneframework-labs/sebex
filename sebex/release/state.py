@@ -208,10 +208,13 @@ class ReleaseState(ConfigFile, Checksumable):
                 # points to soon-to-be-outdated version of the dependency.
                 release_new_version = ((req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version))
                 package_is_obsolete = not req.match(project.from_version) and not req.match(project.to_version)
+                update_package = update_obsolete and package_is_obsolete
 
-                if release_new_version or (package_is_obsolete and update_obsolete):
-                    dep_bump = bumps[project.project].derive(project.from_version)
-                    bumps[dependency] = max(bumps[dependency], dep_bump)
+                if release_new_version or update_package:
+                    # if a dependency of the package changed it's MINOR or MAJOR version then bump dependent by MINOR
+                    req_bump = Bump.MINOR if update_package else Bump.STAY_AS_IS
+                    dep_bump = Bump.between(project.from_version, project.to_version)
+                    bumps[dependency] = max(req_bump, dep_bump)
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)

@@ -22,8 +22,9 @@ def patch_readme(file: Path, project: str, to_version: str):
 
 def _patch_readme_line(line, project, to_version):
     pattern = re.compile(r'".*\d+\.\d+[\.\d+]?.*"')
+    whitespace = re.match(r"\s*", line).group()
     if f'{{:{project}, "' in line and re.search(pattern, line):
-        return f'\t{{:{project}, "~> {to_version}"}}\n'
+        return f'{whitespace}{{:{project}, "~> {to_version}"}}\n'
     else:
         return line
 
