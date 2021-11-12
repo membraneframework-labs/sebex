@@ -213,7 +213,7 @@ class ReleaseState(ConfigFile, Checksumable):
                 if release_new_version or update_package:
                     # if a dependency of the package changed it's MINOR or MAJOR version then bump dependent by MINOR
                     req_bump = Bump.MINOR if update_package else Bump.STAY_AS_IS
-                    dep_bump = Bump.between(project.from_version, project.to_version)
+                    dep_bump = Bump.between(project.from_version, project.to_version)#!.derive(project.from_version)
                     bumps[dependency] = max(req_bump, dep_bump)
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
@@ -227,6 +227,8 @@ class ReleaseState(ConfigFile, Checksumable):
                         dependent_project.to_version = bumps[dependency].apply(dependent_project.from_version)
 
                 if package_is_obsolete:
+                    #! accumulate obsolete `dependency`, `project.to_version`
+                    dependency_bumps[dependency].append({project.project, req_from_version(project.to_version)})
                     warn(f'Project {dependency} depends on an obsolete version '
                          f'of {project.project} (current version is {project.to_version}, '
                          f'while dependency requirement is {req}).')
