@@ -9,6 +9,8 @@ from sebex.edit.span import Span
 Patch = Tuple[Span, str]
 Point = Tuple[int, int]
 
+version_pattern = re.compile(r'".*\d+\.\d+[\.\d+]?.*"')
+whitespace_pattern = re.compile(r"\s*")
 
 def patch_readme(file: Path, project: str, to_version: str):
     new_lines = []
@@ -21,9 +23,11 @@ def patch_readme(file: Path, project: str, to_version: str):
 
 
 def _patch_readme_line(line, project, to_version):
-    pattern = re.compile(r'".*\d+\.\d+[\.\d+]?.*"')
-    whitespace = re.match(r"\s*", line).group()
-    if f'{{:{project}, "' in line and re.search(pattern, line):
+    project = project.replace('-', '_')
+    whitespace = re.match(whitespace_pattern, line).group()
+    if f'{{:{project}, "' in line and re.search(version_pattern, line):
+        print("line:", line)
+        print(f'return: {whitespace}{{:{project}, "~> {to_version}"}}')
         return f'{whitespace}{{:{project}, "~> {to_version}"}}\n'
     else:
         return line
