@@ -26,8 +26,6 @@ def _patch_readme_line(line, project, to_version):
     project = project.replace('-', '_')
     whitespace = re.match(whitespace_pattern, line).group()
     if f'{{:{project}, "' in line and re.search(version_pattern, line):
-        print("line:", line)
-        print(f'return: {whitespace}{{:{project}, "~> {to_version}"}}')
         return f'{whitespace}{{:{project}, "~> {to_version}"}}\n'
     else:
         return line
