@@ -82,5 +82,5 @@ class AnalysisDatabase:
             if entry.package not in index:
                 index[entry.package] = project
             else:
-                raise AnalysisError(f'Duplicate package name: "{entry.package}"')
+                raise AnalysisError(f'Duplicate package name: "{entry.package}" in {project}')
         return index

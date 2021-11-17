@@ -16,7 +16,7 @@ from sebex.config.file import ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.span import Span
-from sebex.log import operation, error, warn
+from sebex.log import operation, error, warn, log
 
 
 @total_ordering
@@ -191,6 +191,7 @@ class ReleaseState(ConfigFile, Checksumable):
         # We will track the minimal version bump needed for each project
         bumps = defaultdict(lambda: Bump.STAY_AS_IS)
         dependency_updates = defaultdict(lambda: [])
+        obsolete_pkg_updates = {}
 
         # Seed bumps with source projects
         for handle in self.sources.keys():
@@ -207,14 +208,20 @@ class ReleaseState(ConfigFile, Checksumable):
                 # We have to release a new version of dependent if its relation
                 # points to soon-to-be-outdated version of the dependency.
                 release_new_version = ((req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version))
-                package_is_obsolete = not req.match(project.from_version) and not req.match(project.to_version)
-                update_package = update_obsolete and package_is_obsolete
+                dependent_is_obsolete = not req.match(project.from_version) and not req.match(project.to_version)
+                if dependent_is_obsolete and dependency not in obsolete_pkg_updates.keys():
+                    obsolete_pkg_updates[dependency] = False
+                # Obsolete packages that are not directly dependent on a bumped package should be ignored
+                ignore_dependent = bumps[project.project] == Bump.STAY_AS_IS
+                update_dependent = update_obsolete and dependent_is_obsolete and not ignore_dependent
+                if update_dependent:
+                    obsolete_pkg_updates[dependency] = True
 
-                if release_new_version or update_package:
+                if release_new_version or update_dependent:
                     # if a dependency of the package changed it's MINOR or MAJOR version then bump dependent by MINOR
-                    req_bump = Bump.MINOR if update_package else Bump.STAY_AS_IS
-                    dep_bump = Bump.between(project.from_version, project.to_version)#!.derive(project.from_version)
-                    bumps[dependency] = max(req_bump, dep_bump)
+                    req_bump = Bump.MINOR if update_dependent else Bump.STAY_AS_IS
+                    version_bump = Bump.between(project.from_version, project.to_version)
+                    bumps[dependency] = max(req_bump, version_bump)
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)
@@ -226,9 +233,7 @@ class ReleaseState(ConfigFile, Checksumable):
                     else:
                         dependent_project.to_version = bumps[dependency].apply(dependent_project.from_version)
 
-                if package_is_obsolete:
-                    #! accumulate obsolete `dependency`, `project.to_version`
-                    dependency_bumps[dependency].append({project.project, req_from_version(project.to_version)})
+                if dependent_is_obsolete:
                     warn(f'Project {dependency} depends on an obsolete version '
                          f'of {project.project} (current version is {project.to_version}, '
                          f'while dependency requirement is {req}).')
@@ -236,6 +241,13 @@ class ReleaseState(ConfigFile, Checksumable):
                 # TODO Implement handling Git & Path deps
                 warn('Project', dependency, 'depends on', project.project,
                      'using git or path requirement, ignoring.')
+
+        for package, do_update in obsolete_pkg_updates.items():
+            if do_update:
+                log(f'{package} will be updated', color='green')
+            else:
+                # either the package is not directly affected by the current release or flag --no-update is set
+                log(f'{package} will not be updated', color='yellow')
 
         # Verify that all bumps are possible
         invalid_bumps = False
