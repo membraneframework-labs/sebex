@@ -23,7 +23,7 @@ def patch_readme(file: Path, project: str, to_version: str):
 
 
 def _patch_readme_line(line, project, to_version):
-    project = project.replace('-', '_')
+    project = project.replace('-', '_') #! temporary fix until github repo names are made consistent
     whitespace = re.match(whitespace_pattern, line).group()
     if f'{{:{project}, "' in line and re.search(version_pattern, line):
         return f'{whitespace}{{:{project}, "~> {to_version}"}}\n'
