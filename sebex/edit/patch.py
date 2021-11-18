@@ -31,6 +31,24 @@ def _patch_readme_line(line, project, to_version):
         return line
 
 
+def patch_readme(file: Path, project: str, to_version: str):
+    new_lines = []
+    with open(file, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            new_lines.append(_patch_readme_line(line, project, to_version))
+    with open(file, 'w') as f:
+        f.writelines(new_lines)
+
+
+def _patch_readme_line(line, project, to_version):
+    pattern = re.compile(r'".*\d+\.\d+\.\d+.*"')
+    if f'{{:{project}, "' in line and re.search(pattern, line):
+        return f'\t{{:{project}, "~> {to_version}"}}\n'
+    else:
+        return line
+
+
 def patch_file(file: Path, patches: Iterable[Patch]):
     with open(file, 'r+', encoding='utf-8') as f:
         text = _run_patch(f, patches)
