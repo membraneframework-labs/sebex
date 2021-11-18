@@ -11,7 +11,7 @@ from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.patch import patch_file, patch_readme
 from sebex.edit.span import Span
 from sebex.language.abc import LanguageSupport
-from sebex.log import operation, warn, fatal
+from sebex.log import operation, warn, fatal, error
 from sebex.popen import popen
 
 
@@ -83,8 +83,11 @@ class ElixirLanguageSupport(LanguageSupport):
             project.repo.vcs.commit(f'bump to {to_version}', [mix_file(project)])
 
         with operation('Update README.md'):
-            patch_readme(readme_file(project), str(project), str(to_version))
-            project.repo.vcs.commit(f'update readme', [readme_file(project)])
+            try:
+                patch_readme(readme_file(project), str(project), str(to_version))
+                project.repo.vcs.commit(f'update readme', [readme_file(project)])
+            except:
+                error("Updating README.md failed. Skipping - you need to update it manually.")
 
 
         if project.repo.vcs.is_tracked(mix_lock(project)):

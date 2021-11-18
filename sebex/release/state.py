@@ -16,7 +16,7 @@ from sebex.config.file import ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.span import Span
-from sebex.log import operation, error, warn
+from sebex.log import operation, error, warn, success
 
 
 @total_ordering
@@ -142,7 +142,7 @@ class ReleaseState(ConfigFile, Checksumable):
         hasher(self.phases)
 
     @classmethod
-    def plan(cls, sources: Dict[ProjectHandle, Version], db: AnalysisDatabase, graph: DependentsGraph) -> 'ReleaseState':
+    def plan(cls, sources: Dict[ProjectHandle, Version], db: AnalysisDatabase, graph: DependentsGraph, update_obsolete: bool) -> 'ReleaseState':
         with operation('Constructing release plan'):
             ignore = set()
             allPhases = []
@@ -177,12 +177,12 @@ class ReleaseState(ConfigFile, Checksumable):
                     rel.get_project(project).from_version = _previous_version(to_version)
                     ignore.add(project)
 
-            rel._build_plan(db, graph)
+            rel._build_plan(db, graph, update_obsolete)
             # modify the final release plan so that all mentions of `VIRTUAL_ROOT` are removed
             rel._prune_unchanged(ignore=ignore)
             return rel
 
-    def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph):
+    def _build_plan(self, db: AnalysisDatabase, graph: DependentsGraph, update_obsolete: bool):
         """
         Propagates version bumps down the phases, we are searching for
         maximum needed bump for each project. Fills `dependency_updates` fields in project states.
@@ -191,6 +191,9 @@ class ReleaseState(ConfigFile, Checksumable):
         # We will track the minimal version bump needed for each project
         bumps = defaultdict(lambda: Bump.STAY_AS_IS)
         dependency_updates = defaultdict(lambda: [])
+        obsolete_pkg_updates = {}
+
+        source_names = [str(self.get_project(s).project) for s in self.sources.keys()]
 
         # Seed bumps with source projects
         for handle in self.sources.keys():
@@ -201,14 +204,29 @@ class ReleaseState(ConfigFile, Checksumable):
 
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
+            # Don't bump nor update dependencies of prerelease packages (alpha etc.)
+            if projects[dependency].from_version._prerelease is not None and dependency not in source_names:
+                continue
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
                 req: VersionRequirement = relation.version_spec.value
                 # We have to release a new version of dependent if its relation
                 # points to soon-to-be-outdated version of the dependency.
-                if (req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version):
-                    dep_bump = bumps[project.project].derive(project.from_version)
-                    bumps[dependency] = max(bumps[dependency], dep_bump)
+                release_new_version = ((req.match(project.from_version) or req.match(_previous_version(project.to_version))) and not req.match(project.to_version))
+                dependent_is_obsolete = not req.match(project.from_version) and not req.match(project.to_version)
+                if dependent_is_obsolete and dependency not in obsolete_pkg_updates.keys():
+                    obsolete_pkg_updates[dependency] = False
+                # Obsolete packages that are not directly dependent on a bumped package should be ignored
+                ignore_dependent = bumps[project.project] == Bump.STAY_AS_IS
+                update_dependent = update_obsolete and dependent_is_obsolete and not ignore_dependent
+                if update_dependent:
+                    obsolete_pkg_updates[dependency] = True
+
+                if release_new_version or update_dependent:
+                    # if a dependency of the package changed it's MINOR or MAJOR version then bump dependent by MINOR
+                    req_bump = Bump.MINOR if update_dependent else Bump.STAY_AS_IS
+                    version_bump = Bump.between(project.from_version, project.to_version)
+                    bumps[dependency] = max(req_bump, version_bump)
 
                     update = relation.prepare_update(VersionSpec.targeting(project.to_version))
                     dependency_updates[dependency].append(update)
@@ -220,8 +238,7 @@ class ReleaseState(ConfigFile, Checksumable):
                     else:
                         dependent_project.to_version = bumps[dependency].apply(dependent_project.from_version)
 
-                # Notify user when we spot an obsolete package.
-                if not req.match(project.from_version) and not req.match(project.to_version):
+                if dependent_is_obsolete:
                     warn(f'Project {dependency} depends on an obsolete version '
                          f'of {project.project} (current version is {project.to_version}, '
                          f'while dependency requirement is {req}).')
@@ -229,6 +246,13 @@ class ReleaseState(ConfigFile, Checksumable):
                 # TODO Implement handling Git & Path deps
                 warn('Project', dependency, 'depends on', project.project,
                      'using git or path requirement, ignoring.')
+
+        for package, do_update in obsolete_pkg_updates.items():
+            if do_update:
+                success(f'{package} obsolete dependencies will be updated')
+            else:
+                # either the package is not directly affected by the current release orthe `--no-update` flag is set
+                warn(f'{package} will not be updated')
 
         # Verify that all bumps are possible
         invalid_bumps = False

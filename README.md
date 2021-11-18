@@ -60,6 +60,15 @@ Project:
 All listed packages as well as their dependent packages will be bumped by one minor version (e.g. 0.2.1 -> 0.3.0).
 Review if you're happy with the suggested release plan and save it.
 
+Sebex will warn you if there are obsolete dependencies in your packages. By default they will be updated anyway.
+To disable updating of obsolete packages run:
+
+```bash
+sebex release plan --no-update
+```
+
+Example output of `sebex release plan`:
+
 ```
 Release "Purely Easy Wahoo"
 ===========================
@@ -89,6 +98,8 @@ sebex release proceed
 
 for each phase of the plan.
 
+If at this point you encounter an error while releasing any phase of the plan there is no need to rerun `sebex release plan`. Instead run `sebex release proceed` after you've fixed the issue causing that phase to fail. Sebex will continue where you left off.
+
 ### Elixir
 
 At the moment Elixir is the only supported language.
@@ -102,7 +113,8 @@ mix hex.user key generate
 ```
 
 Only packages that were released at least once will be published automatically by Sebex to avoid publishing work-in-progress projects.
-However packages belonging to the Github `sebex-test-organization` will always be published.
+
+To publish a package that has not yet been published to hex you can edit the `force-publish` field in your `manifest.yaml` file.
 
 ## Development
 

@@ -80,8 +80,10 @@ def valid_project(value: str) -> Optional[ProjectHandle]:
 @release.command()
 @click.option('--dry', is_flag=True,
               help='Print what would be done, but do not persist the generated plan.')
+@click.option('--update/--no-update', is_flag=True, default=True,
+              help='Should packages depending on obsolete versions of other packages be updated?')
 @click.option('--source', '-s', multiple=True, type=SOURCE)
-def plan(dry: bool, source):
+def plan(dry: bool, update: bool, source):
     """
     Prepare release plan for managed packages.
     """
@@ -101,7 +103,7 @@ def plan(dry: bool, source):
                   'Please finish it before creating new one.')
 
     database, graph = analyze()
-    rel = ReleaseState.plan(sources, database, graph)
+    rel = ReleaseState.plan(sources, database, graph, update)
 
     log()
     log(rel.describe())
