@@ -16,7 +16,7 @@ from sebex.config.file import ConfigFile
 from sebex.config.format import Format, YamlFormat
 from sebex.config.manifest import Manifest, ProjectHandle
 from sebex.edit.span import Span
-from sebex.log import operation, error, warn, log
+from sebex.log import operation, error, warn, success
 
 
 @total_ordering
@@ -202,6 +202,9 @@ class ReleaseState(ConfigFile, Checksumable):
 
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
+            # Don't bump nor update dependencies of prerelease packages (alpha etc.)
+            if projects[dependency].from_version._prerelease is not None:
+                continue
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
                 req: VersionRequirement = relation.version_spec.value
@@ -242,12 +245,12 @@ class ReleaseState(ConfigFile, Checksumable):
                 warn('Project', dependency, 'depends on', project.project,
                      'using git or path requirement, ignoring.')
 
-        for package, do_update in obsolete_pkg_updates.items():
-            if do_update:
-                log(f'{package} will be updated', color='green')
+        for package, will_be_updated in obsolete_pkg_updates.items():
+            if will_be_updated:
+                success(f'{package} obsolete dependencies will be updated')
             else:
-                # either the package is not directly affected by the current release or flag --no-update is set
-                log(f'{package} will not be updated', color='yellow')
+                # either the package was not directly affected by the current release or the `--no-update` flag was set
+                warn(f'{package} will not be updated')
 
         # Verify that all bumps are possible
         invalid_bumps = False
