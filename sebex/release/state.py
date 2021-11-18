@@ -193,6 +193,8 @@ class ReleaseState(ConfigFile, Checksumable):
         dependency_updates = defaultdict(lambda: [])
         obsolete_pkg_updates = {}
 
+        source_names = [str(self.get_project(s).project) for s in self.sources.keys()]
+
         # Seed bumps with source projects
         for handle in self.sources.keys():
             project = self.get_project(handle)
@@ -203,7 +205,7 @@ class ReleaseState(ConfigFile, Checksumable):
         # Here we go
         for project, dependency, relation in self._dependency_relations(db, graph):
             # Don't bump nor update dependencies of prerelease packages (alpha etc.)
-            if projects[dependency].from_version._prerelease is not None:
+            if projects[dependency].from_version._prerelease is not None and dependency not in source_names:
                 continue
             # We need to handle each dependency kind (version req, git, path) separately
             if relation.version_spec.is_version:
@@ -245,11 +247,11 @@ class ReleaseState(ConfigFile, Checksumable):
                 warn('Project', dependency, 'depends on', project.project,
                      'using git or path requirement, ignoring.')
 
-        for package, will_be_updated in obsolete_pkg_updates.items():
-            if will_be_updated:
+        for package, do_update in obsolete_pkg_updates.items():
+            if do_update:
                 success(f'{package} obsolete dependencies will be updated')
             else:
-                # either the package was not directly affected by the current release or the `--no-update` flag was set
+                # either the package is not directly affected by the current release orthe `--no-update` flag is set
                 warn(f'{package} will not be updated')
 
         # Verify that all bumps are possible
