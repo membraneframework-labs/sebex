@@ -20,19 +20,21 @@ To update your existing installation, invoke `make install` again.
 
 ## Usage
 
-Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `TOKEN` environment variable or pass it with the `--github_access_token` option.
+Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `SEBEX_GITHUB_ACCESS_TOKEN` environment variable or pass it with the `--github_access_token` option.
 
 ### Preparation
 
-It's advisable to use the `--profile` and `--workspace` options when running Sebex or to set env vars `SEBEX_PROFILE` and `SEBEX_WORKSPACE`
+It's advisable to use the `--workspace` and `--profile` options when running Sebex or to set the corresponding env vars: `SEBEX_WORKSPACE` and `SEBEX_PROFILE`.
++ The workspace is a directory, where sebex clones repositories, so that it can work on them later on. It also contains `.sebex` subdirectory, with some metadata files needed for sebex to run properly, and the `profiles` subdirectory, where the list of profiles specification is put. The default workspace (appicable to a situation that you haven't explicitly specify the workspace) is the directory, from which you are running the sebex.
++ The profile helps you manage different sebex configurations. Each profile is described by the `<profile name>` text file inside the `<workspace_directory>/profiles/` directory. You need to create that file on your own. Note, that the `<profile name>` is exactly the same as the profile name specified by the `--profile` option - that means, that the file it does not have any special extension.
 
 To add an organization run:
 
 ```bash
-sebex bootstrap -o sebex-test-organization
+sebex bootstrap -o <Github organization name>
 ```
 
-This will create the `manifest.yaml` listing all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!project_name` to your `workspace_directory/profiles/your_profile.txt` file.
+This will create the `manifest.yaml` inside the `.sebex` subdirectory of your workspace directory. The manifest will contain a list of all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!<project name>` to your `<workspace directory>/profiles/<your profile>` file.
 
 To perform further work Sebex must clone your organization's repositories to your local workspace:
 
@@ -48,7 +50,8 @@ sebex graph --view
 
 ### Releasing packages
 
-Prepare a release plan by listing the project names of the packages you want to release:
+Prepare a release plan by listing the project names (names of the repositories) of the packages you want to release. 
+At least one project name needs to be passed. When you are done with listing the needed projects, simply press enter.
 
 ```bash
 sebex release plan
@@ -57,8 +60,8 @@ Project: sebex_test_e
 Project:
 ```
 
+
 All listed packages as well as their dependent packages will be bumped by one minor version (e.g. 0.2.1 -> 0.3.0).
-Review if you're happy with the suggested release plan and save it.
 
 ```
 Release "Purely Easy Wahoo"
@@ -80,6 +83,9 @@ Release "Purely Easy Wahoo"
 
 Save this release? [y/N]:
 ```
+The release plan will be saved inside the `<workspace director>/release.yaml` file.
+The release is divided into several phases. The subsequent phase can be launched, once the previous phase is finished, which is necessary due to dependencies between projects.
+In the first phase we are releasing new version of the listed projects. The later phases releases come with dependencies updates.
 
 To execute the plan run:
 
@@ -87,7 +93,8 @@ To execute the plan run:
 sebex release proceed
 ```
 
-for each phase of the plan.
+for each phase of the plan. 
+During the release, follow the instructions provided by sebex.
 
 ### Elixir
 
