@@ -26,7 +26,7 @@ Make sure the repositories of your GitHub Organization are public. To allow Sebe
 
 It's advisable to use the `--workspace` and `--profile` options when running Sebex or to set the corresponding env vars: `SEBEX_WORKSPACE` and `SEBEX_PROFILE`.
 + The workspace is a directory, where sebex clones repositories, so that it can work on them later on. It also contains `.sebex` subdirectory, with some metadata files needed for sebex to run properly, and the `profiles` subdirectory, where the list of profiles specification is put. The default workspace (appicable to a situation that you haven't explicitly specify the workspace) is the directory, from which you are running the sebex.
-+ The profile helps you manage different sebex configurations. Each profile is described by the `<profile name>` text file inside the `<workspace_directory>/profiles/` directory. You need to create that file on your own. Note, that the `<profile name>` is exactly the same as the profile name specified by the `--profile` option - that means, that the file it does not have any special extension.
++ The profile helps you manage different sebex configurations. Each profile is described by the `<profile name>` text file inside the `<workspace_directory>/profiles/` directory. You need to create that file on your own. An exemplary profile description file can be found inside `examples/` subdirectory of this repository. Note, that the `<profile name>` is exactly the same as the profile name specified by the `--profile` option - that means, that the file does not have any special extension.
 
 To add an organization run:
 
