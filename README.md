@@ -25,7 +25,7 @@ Make sure the repositories of your GitHub Organization are public. To allow Sebe
 ### Preparation
 
 It's advisable to use the `--workspace` and `--profile` options when running Sebex or to set the corresponding env vars: `SEBEX_WORKSPACE` and `SEBEX_PROFILE`.
-+ The workspace is a directory, where sebex clones repositories, so that it can work on them later on. It also contains `.sebex` subdirectory, with some metadata files needed for sebex to run properly, and the `profiles` subdirectory, where the list of profiles specification is put. The default workspace (applicable to a situation in which you haven't explicitly specified the workspace) is the directory, from which you are running the sebex.
++ The workspace is a directory, where sebex clones repositories, so that it can work on them later on. It also contains `.sebex` subdirectory, with some metadata files needed for sebex to run properly. The default workspace (applicable to a situation in which you haven't explicitly specified the workspace) is the directory, from which you are running the sebex.
 + The profile helps you manage different sebex configurations. Each profile is described by the `<profile name>.txt` text file inside the `<workspace_directory>/.sebex/profiles/` directory. You need to create that file on your own. An exemplary profile description file can be found inside `examples/` subdirectory of this repository. Note, that the `<profile name>.txt` file has a `.txt` extension - later on, you will be able to refer to it with `--profile <profile name>` option within the command syntax.
 
 To add an organization run:
@@ -34,7 +34,7 @@ To add an organization run:
 sebex bootstrap -o <Github organization name>
 ```
 
-This will create the `manifest.yaml` inside the `.sebex` subdirectory of your workspace directory. The manifest will contain a list of all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!<project name>` to your `<workspace directory>/profiles/<your profile>` file.
+This will create the `manifest.yaml` inside the `.sebex` subdirectory of your workspace directory. The manifest will contain a list of all public repositories in that organization. To exclude broken or unsupported repositories from further analysis add a new line containing `!<project name>` to your `<workspace directory>/.sebex/profiles/<your profile>.txt` file.
 
 To perform further work Sebex must clone your organization's repositories to your local workspace:
 
