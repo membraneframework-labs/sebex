@@ -19,8 +19,10 @@ Under the hood this will build Elixir analyzer script and place it in the expect
 To update your existing installation, invoke `make install` again.
 
 ## Usage
-
-Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `SEBEX_GITHUB_ACCESS_TOKEN` environment variable or pass it with the `--github_access_token` option.
+### Setup communication with GitHub API
+Make sure the repositories of your GitHub Organization are public. To allow Sebex to edit your repositories:
++ Generate a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and set it as your `SEBEX_GITHUB_ACCESS_TOKEN` environment variable or pass it with the `--github_access_token` option.
++ [Generate SSH key, add it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) and [add to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
 ### Preparation
 
