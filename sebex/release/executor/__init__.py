@@ -3,6 +3,7 @@ from typing import List, Type
 from sebex.log import operation, logcontext
 from sebex.release.executor.cleanup import Cleanup
 from sebex.release.executor.close_release_branch import CloseReleaseBranch
+from sebex.release.executor.create_gh_release import CreateGHRelease
 from sebex.release.executor.merge_pull_request import MergePullRequest
 from sebex.release.executor.open_pull_request import OpenPullRequest
 from sebex.release.executor.open_release_branch import OpenReleaseBranch
@@ -15,6 +16,7 @@ _ALL_TASK_TYPES: List[Type[Task]] = [
     OpenPullRequest,
     MergePullRequest,
     CloseReleaseBranch,
+    CreateGHRelease,
     PublishPackage,
     Cleanup,
 ]
