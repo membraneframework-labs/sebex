@@ -102,9 +102,10 @@ class Vcs:
     def create_github_release(self, tag: str, message: str):
         # TODO we should use the official PyGithub library instead of the fork
         # but since it may take quite a lot of time (probably a few months)
-        # to merge PR by adding generate_release_notes we can use the forked version.
+        # to merge PR adding generate_release_notes we can use the forked version.
         # After merging and releasing that PR we should change the dependency.
-        self.github.create_git_release(tag=tag, name=tag, message=message, generate_release_notes=True)
+        self.github.create_git_release(
+            tag=tag, name=tag, message=message, generate_release_notes=True)
 
     def checkout(self, branch: str, ensure_clean: bool = True, delete_existing: bool = False):
         with operation(f'Checking out branch {branch}'):

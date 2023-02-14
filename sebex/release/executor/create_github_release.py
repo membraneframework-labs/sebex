@@ -19,8 +19,6 @@ class CreateGithubRelease(Task):
         tag = release_tag_name(self.project)
         vsc = self.project.project.repo.vcs
 
-        # TODO after updating PyGithub lib we should handle creating automatic
-        # release notes generation (just sending another bool in POST)
         vsc.create_github_release(tag=tag, message=tag)
 
         return Action.PROCEED
