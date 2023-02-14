@@ -17,8 +17,8 @@ class CreateGithubRelease(Task):
 
     def run(self, release: ReleaseState) -> Action:
         tag = release_tag_name(self.project)
-        vsc = self.project.project.repo.vcs
+        vcs = self.project.project.repo.vcs
 
-        vsc.create_github_release(tag=tag, message=tag)
+        vcs.create_github_release(tag=tag, message=tag)
 
         return Action.PROCEED
