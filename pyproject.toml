@@ -28,7 +28,7 @@ colorama = "*"
 gitpython = "^3.0"
 graphviz = "^0.13.0"
 petname = "^2.6"
-pygithub = "^1.47"
+pygithub = { git = "https://github.com/WojciechBarczynski/PyGithub", branch = "add_generate_release_notes" }
 python-dotenv = "^0.10.5"
 pyyaml = "^5.3"
 semver = "^2.9"
