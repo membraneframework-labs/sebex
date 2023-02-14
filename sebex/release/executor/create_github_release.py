@@ -10,10 +10,10 @@ from sebex.release.state import ReleaseStage, ReleaseState
 
 
 @dataclass
-class CreateGHRelease(Task):
+class CreateGithubRelease(Task):
     @classmethod
     def stage(cls) -> ReleaseStage:
-        return ReleaseStage.CREATE_GH_RELEASE
+        return ReleaseStage.CREATE_GITHUB_RELEASE
 
     def run(self, release: ReleaseState) -> Action:
         tag = release_tag_name(self.project)

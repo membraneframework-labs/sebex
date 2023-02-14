@@ -26,7 +26,7 @@ class ReleaseStage(Enum):
     PULL_REQUEST_OPENED = 'pull_request_opened'
     PULL_REQUEST_MERGED = 'pull_request_merged'
     BRANCH_CLOSED = 'branch_closed'
-    CREATE_GH_RELEASE = 'create_gh_release'
+    CREATE_GITHUB_RELEASE = 'create_github_release'
     PUBLISHED = 'published'
     DONE = 'done'
 
