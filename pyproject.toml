@@ -28,7 +28,11 @@ colorama = "*"
 gitpython = "^3.0"
 graphviz = "^0.13.0"
 petname = "^2.6"
-pygithub = "^1.47"
+# TODO we should use the official PyGithub library instead of the fork
+#  but since it may take quite a lot of time (probably a few months)
+#  to merge PR adding generate_release_notes, we can use the forked version.
+#  After merging and releasing that PR we should change the dependency.
+pygithub = { git = "https://github.com/WojciechBarczynski/PyGithub", branch = "add_generate_release_notes" }
 python-dotenv = "^0.10.5"
 pyyaml = "^5.3"
 semver = "^2.9"

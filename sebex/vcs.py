@@ -14,7 +14,8 @@ from sebex.config.manifest import RepositoryHandle, Manifest
 from sebex.context import Context
 from sebex.log import log, operation, fatal, warn
 
-_GITHUB_SSH_URL = re.compile(r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
+_GITHUB_SSH_URL = re.compile(
+    r'git@github\.com:(?P<full>(?P<org>[^/]+)/(?P<repo>.+))\.git/?')
 _PR_MARKETING = r'''
 
 <sup>proudly automated with <a href="https://github.com/membraneframework/sebex">Sebex</a></sup>
@@ -88,7 +89,8 @@ class Vcs:
         log('Commit:', click.style(base_message, fg='magenta'))
 
         if files:
-            self.git.git.add('--', [p.relative_to(self.location) for p in files])
+            self.git.git.add(
+                '--', [p.relative_to(self.location) for p in files])
         else:
             self.git.git.add('.')
 
@@ -97,11 +99,16 @@ class Vcs:
     def tag(self, tag: str, message=None):
         self.git.create_tag(tag, message=message)
 
+    def create_github_release(self, tag: str, message: str):
+        self.github.create_git_release(
+            tag=tag, name=tag, message=message, generate_release_notes=True)
+
     def checkout(self, branch: str, ensure_clean: bool = True, delete_existing: bool = False):
         with operation(f'Checking out branch {branch}'):
             # Clean existing (remote) branch if it exists
             if delete_existing and self.branch_exists(branch):
-                head: Head = next(h for h in self.git.heads if h.name == branch)
+                head: Head = next(
+                    h for h in self.git.heads if h.name == branch)
                 if head.tracking_branch() is not None:
                     fatal(f'Branch {branch} is already created and',
                           f'it tracks a remote branch {head.tracking_branch()}.',
@@ -187,7 +194,8 @@ class Vcs:
         body = body + _PR_MARKETING
         body = body.strip()
 
-        pr = self.github.create_pull(title=title, head=branch, base=base, body=body)
+        pr = self.github.create_pull(
+            title=title, head=branch, base=base, body=body)
 
         log('Pull request opened:', pr.html_url)
         return True
