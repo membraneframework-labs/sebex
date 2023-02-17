@@ -100,10 +100,6 @@ class Vcs:
         self.git.create_tag(tag, message=message)
 
     def create_github_release(self, tag: str, message: str):
-        # TODO we should use the official PyGithub library instead of the fork
-        #  but since it may take quite a lot of time (probably a few months)
-        #  to merge PR adding generate_release_notes we can use the forked version.
-        #  After merging and releasing that PR we should change the dependency.
         self.github.create_git_release(
             tag=tag, name=tag, message=message, generate_release_notes=True)
 
