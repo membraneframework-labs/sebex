@@ -30,7 +30,7 @@ graphviz = "^0.13.0"
 petname = "^2.6"
 pygithub = "^1.59.0"
 python-dotenv = "^0.10.5"
-pyyaml = "^5.3"
+pyyaml = "^5.4"
 semver = "^2.9"
 
 [tool.poetry.dev-dependencies]
